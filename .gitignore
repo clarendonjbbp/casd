@@ -19,3 +19,13 @@
 
 # Go workspace file
 go.work
+
+# Vi
+*.swp
+*.swo
+
+# Build and toolchain
+/sorter
+/sorter-web
+/randomize
+/.build

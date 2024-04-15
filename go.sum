@@ -1,0 +1,4 @@
+github.com/dariubs/percent v1.0.0 h1:fY8q40FRYaCiFZ0gTOa73Cmp21hS32w+tSSmqbGnUzc=
+github.com/dariubs/percent v1.0.0/go.mod h1:NDZpkezJ8QqyIW/510MywB5T2KdC8v/0oTlEoPcMsRM=
+golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 h1:vr/HnozRka3pE4EsMEg1lgkXJkTFJCVUX+S/ZT6wYzM=
+golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842/go.mod h1:XtvwrStGgqGPLc4cjQfWqZHG1YFdYs6swckp8vpsjnc=
