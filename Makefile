@@ -110,7 +110,7 @@ build-randomizer:
 	go build -o randomize ./cmd/randomizer
 
 run: build-web
-	./sorter-web	
+	$(E)./sorter-web
 
 clean:
 	go clean ./cmd/sorter
@@ -122,10 +122,10 @@ clean:
 .PHONY: container-builder docker-build
 
 container-builder:
-	docker buildx create --platform $(PLATFORMS) --name container-builder --driver docker-container  --node container-builder0  --use
+	$(E)docker buildx create --platform $(PLATFORMS) --name container-builder --driver docker-container  --node container-builder0  --use
 
 docker-build: container-builder
-	@echo "Building multi-architecture images..."
+	$(E)echo "Building multi-architecture images..."
 	docker buildx build \
 		--platform $(PLATFORMS) \
 		--build-arg go_version=$(go_version) \
