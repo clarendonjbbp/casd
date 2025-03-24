@@ -5,7 +5,6 @@
 ```bash
 $ make run
 go build -o sorter-web ./cmd/web
-./sorter-web
 2025/03/23 22:00:40 Starting server on :8080
 ```
 
