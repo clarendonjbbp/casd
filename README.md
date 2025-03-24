@@ -9,7 +9,7 @@ go build -o sorter-web ./cmd/web
 2025/03/23 22:00:40 Starting server on :8080
 ```
 
-Then go to [localhost:8080](localhost:8080) in your browser. Sample groups and workshops are in the root of this repo.
+Then go to [localhost:8080](http://localhost:8080) in your browser. Sample groups and workshops are in the root of this repo.
 
 ## How build command line sorter
 
