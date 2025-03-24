@@ -227,12 +227,23 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	// Generate output
 	var output bytes.Buffer
 	output.WriteString(`<div class="results">`)
-	output.WriteString("<h2>Groups</h2>")
+	output.WriteString(`<details open>
+		<summary><h2>Groups</h2></summary>
+		<div class="section-content">`)
 	sorter.PrintGroupsHTML(&output, groups)
-	output.WriteString("<h2>Art Workshops</h2>")
+	output.WriteString(`</div></details>`)
+
+	output.WriteString(`<details open>
+		<summary><h2>Art Workshops</h2></summary>
+		<div class="section-content">`)
 	sorter.PrintWorkshopsHTML(&output, artWorkshops)
-	output.WriteString("<h2>Science Workshops</h2>")
+	output.WriteString(`</div></details>`)
+
+	output.WriteString(`<details open>
+		<summary><h2>Science Workshops</h2></summary>
+		<div class="section-content">`)
 	sorter.PrintWorkshopsHTML(&output, sciWorkshops)
+	output.WriteString(`</div></details>`)
 	output.WriteString("</div>")
 
 	// Return results page
@@ -286,9 +297,31 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
         .results {
             margin-top: 2em;
         }
-        .results h2 {
-            border-bottom: 2px solid #eee;
-            padding-bottom: 0.5em;
+        .results details {
+            margin-bottom: 2em;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+        .results details summary {
+            padding: 1em;
+            cursor: pointer;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+        .results details summary:hover {
+            background: #e9ecef;
+        }
+        .results details summary h2 {
+            display: inline;
+            margin: 0;
+            font-size: 1.5em;
+        }
+        .results details summary::-webkit-details-marker {
+            margin-right: 1em;
+        }
+        .results .section-content {
+            padding: 1em;
         }
         .results pre {
             margin: 1em 0;
