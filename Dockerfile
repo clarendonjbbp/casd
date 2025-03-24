@@ -1,5 +1,6 @@
 # Build stage
-FROM golang:1.23.3-alpine AS builder
+ARG go_version=1.23.3
+FROM --platform=$BUILDPLATFORM golang:${go_version}-alpine AS builder
 
 # Set the working directory
 WORKDIR /build
@@ -14,7 +15,9 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/web
+ARG TARGETARCH
+ARG TARGETOS
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o server ./cmd/web
 
 # Final stage
 FROM alpine:3.19

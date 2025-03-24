@@ -34,6 +34,10 @@ endif
 
 DIR := ${CURDIR}
 build_dir := $(DIR)/.build/$(os1)-$(arch1)
+PLATFORMS ?= linux/amd64,linux/arm64
+IMAGE_NAME ?= sorter
+TAG ?= latest
+go_version := $(shell sed -En 's/^go[ ]+([0-9.]+).*/\1/p' go.mod)
 
 E:=@
 ifeq ($(V),1)
@@ -110,6 +114,28 @@ run: build-web
 
 clean:
 	go clean ./cmd/sorter
+
+#############################################################################
+# Docker
+#############################################################################
+
+.PHONY: container-builder docker-build
+
+container-builder:
+	docker buildx create --platform $(PLATFORMS) --name container-builder --driver docker-container  --node container-builder0  --use
+
+docker-build: container-builder
+	@echo "Building multi-architecture images..."
+	docker buildx build \
+		--platform $(PLATFORMS) \
+		--build-arg go_version=$(go_version) \
+		--tag "${IMAGE_NAME}:${TAG}" \
+		--push \
+		. 
+
+docker-push: docker-build
+	docker push ${IMAGE_NAME}:${TAG}
+	
 
 #############################################################################
 # Code cleanliness
