@@ -268,3 +268,105 @@ func PrintGroups(w io.Writer, groups []*Group) {
 		group.Print(w)
 	}
 }
+
+func (g *Group) PrintHTML(w io.Writer) {
+	fmt.Fprintf(w, "<div class='group'>\n")
+	fmt.Fprintf(w, "<h3>%s</h3>\n", g.id)
+
+	fmt.Fprintf(w, "<div class='group-details'>\n")
+	fmt.Fprintf(w, "<p><strong>Teacher:</strong> %s</p>\n", g.Teacher)
+	if g.Grade == 0 {
+		fmt.Fprintf(w, "<p><strong>Grade:</strong> K</p>\n")
+	} else {
+		fmt.Fprintf(w, "<p><strong>Grade:</strong> %d</p>\n", g.Grade)
+	}
+	fmt.Fprintf(w, "<p><strong>Students:</strong> %s</p>\n", strings.Join(g.students, ", "))
+
+	if len(g.ParentIDs) > 0 {
+		parentIDs := make([]string, 0, len(g.ParentIDs))
+		for parentID := range g.ParentIDs {
+			parentIDs = append(parentIDs, parentID)
+		}
+		sort.Strings(parentIDs)
+		fmt.Fprintf(w, "<p><strong>Parent Workshops:</strong> %s</p>\n", strings.Join(parentIDs, ", "))
+	}
+	fmt.Fprintf(w, "</div>\n")
+
+	fmt.Fprintf(w, "<table class='schedule'>\n")
+	fmt.Fprintf(w, "<thead>\n<tr>\n<th>Session</th>\n<th>Workshop ID</th>\n<th>Workshop Name</th>\n<th>Room</th>\n</tr>\n</thead>\n")
+	fmt.Fprintf(w, "<tbody>\n")
+
+	for i, workshop := range g.workshops {
+		fmt.Fprintf(w, "<tr>\n")
+		fmt.Fprintf(w, "<td>%d</td>\n", i+1)
+		if workshop != nil {
+			fmt.Fprintf(w, "<td>%s</td>\n", workshop.id)
+			fmt.Fprintf(w, "<td>%s</td>\n", workshop.Name)
+			fmt.Fprintf(w, "<td>%s</td>\n", workshop.room)
+		} else {
+			fmt.Fprintf(w, "<td colspan='3' class='unfilled'>Not Scheduled</td>\n")
+		}
+		fmt.Fprintf(w, "</tr>\n")
+	}
+
+	fmt.Fprintf(w, "</tbody>\n</table>\n")
+	fmt.Fprintf(w, "</div>\n")
+}
+
+func PrintGroupsHTML(w io.Writer, groups []*Group) {
+	// Write CSS styles
+	fmt.Fprintf(w, `<style>
+.group {
+    margin-bottom: 2em;
+    padding: 1em;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+}
+.group h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0.5em;
+}
+.group-details {
+    margin: 1em 0;
+}
+.group-details p {
+    margin: 0.5em 0;
+}
+.group .schedule {
+    width: 100%%;
+    border-collapse: collapse;
+    margin-top: 1em;
+}
+.group .schedule th,
+.group .schedule td {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+.group .schedule th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+.group .schedule .unfilled {
+    color: #dc3545;
+    text-align: center;
+    font-style: italic;
+}
+</style>
+`)
+
+	// Sort groups by teacher name for consistent display
+	sortedGroups := make([]*Group, len(groups))
+	copy(sortedGroups, groups)
+	slices.SortFunc(sortedGroups, func(a, b *Group) int {
+		return strings.Compare(fmt.Sprintf("%d-%s-%s", a.Grade, a.Teacher, a.Name), fmt.Sprintf("%d-%s-%s", b.Grade, b.Teacher, b.Name))
+	})
+
+	// Write each group
+	for _, group := range sortedGroups {
+		group.PrintHTML(w)
+	}
+}

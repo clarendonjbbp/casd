@@ -172,7 +172,9 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	random := r.FormValue("random") == "true"
 	minUtilization := 30 // Default value
 	if val := r.FormValue("min-utilization"); val != "" {
-		fmt.Sscanf(val, "%d", &minUtilization)
+		if _, err := fmt.Sscanf(val, "%d", &minUtilization); err != nil {
+			http.Error(w, fmt.Sprintf("Error parsing min-utilization: %v", err), http.StatusBadRequest)
+		}
 	}
 
 	// Process files
@@ -224,13 +226,14 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	// Generate output
 	var output bytes.Buffer
-	output.WriteString("# Community Arts and Sciences Day Assignments  \n\n")
-	output.WriteString("## Groups  \n\n")
-	sorter.PrintGroups(&output, groups)
-	output.WriteString("## Art Workshops \n\n")
-	sorter.PrintWorkshops(&output, artWorkshops)
-	output.WriteString("## Science Workshops  \n\n")
-	sorter.PrintWorkshops(&output, sciWorkshops)
+	output.WriteString(`<div class="results">`)
+	output.WriteString("<h2>Groups</h2>")
+	sorter.PrintGroupsHTML(&output, groups)
+	output.WriteString("<h2>Art Workshops</h2>")
+	sorter.PrintWorkshopsHTML(&output, artWorkshops)
+	output.WriteString("<h2>Science Workshops</h2>")
+	sorter.PrintWorkshopsHTML(&output, sciWorkshops)
+	output.WriteString("</div>")
 
 	// Return results page
 	tmpl := `
@@ -272,12 +275,23 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
         }
         h1, h2 {
             color: #333;
+            margin-top: 1.5em;
         }
         .summary {
             margin: 20px 0;
             padding: 15px;
             background-color: #e9ecef;
             border-radius: 5px;
+        }
+        .results {
+            margin-top: 2em;
+        }
+        .results h2 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5em;
+        }
+        .results pre {
+            margin: 1em 0;
         }
     </style>
 </head>
@@ -287,8 +301,7 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
     </div>
     <h1>Scheduling Results</h1>
     
-    <h2>Final Schedule</h2>
-    <pre>{{.Output}}</pre>
+    {{.Output}}
 
     <div class="summary">
         <h3>Summary</h3>
@@ -311,12 +324,12 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	t := template.Must(template.New("results").Parse(tmpl))
 	if err := t.Execute(w, struct {
 		Logs           string
-		Output         string
+		Output         template.HTML
 		Random         bool
 		MinUtilization int
 	}{
 		Logs:           buf.String(),
-		Output:         output.String(),
+		Output:         template.HTML(output.String()),
 		Random:         random,
 		MinUtilization: minUtilization,
 	}); err != nil {

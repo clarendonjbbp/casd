@@ -4,13 +4,14 @@ import (
 	"cmp"
 	"encoding/csv"
 	"fmt"
-	"golang.org/x/exp/maps"
 	"io"
 	"log"
 	"os"
 	"slices"
 	"strconv"
 	"strings"
+
+	"golang.org/x/exp/maps"
 
 	"github.com/dariubs/percent"
 )
@@ -294,4 +295,107 @@ func idToKind(id string) int {
 
 func remove(slice []*Group, s int) []*Group {
 	return append(slice[:s], slice[s+1:]...)
+}
+
+func (w Workshop) PrintHTML(wr io.Writer) {
+	fmt.Fprintf(wr, "<div class='workshop'>\n")
+	fmt.Fprintf(wr, "<h3>%s</h3>\n", w.Name)
+	fmt.Fprintf(wr, "<p><strong>ID:</strong> %s</p>\n", w.id)
+	fmt.Fprintf(wr, "<p><strong>Capacity per session:</strong> %d</p>\n", w.Capacity)
+	fmt.Fprintf(wr, "<p><strong>Overall utilization:</strong> %d%%</p>\n", w.OverallUtilization())
+
+	fmt.Fprintf(wr, "<table class='schedule'>\n")
+	fmt.Fprintf(wr, "<thead>\n<tr>\n<th>Session</th>\n<th>Utilization</th>\n<th>Students</th>\n</tr>\n</thead>\n")
+	fmt.Fprintf(wr, "<tbody>\n")
+
+	for i := 0; i < numSessions; i++ {
+		fmt.Fprintf(wr, "<tr>\n")
+		fmt.Fprintf(wr, "<td>%d</td>\n", i+1)
+
+		if w.SpotsAvailable[i] == -1 {
+			fmt.Fprintf(wr, "<td>-</td>\n<td>-</td>\n")
+		} else {
+			utilization := w.Utilization(i)
+			utilizationClass := "normal"
+			if utilization < 30 {
+				utilizationClass = "low"
+			} else if utilization > 80 {
+				utilizationClass = "high"
+			}
+
+			fmt.Fprintf(wr, "<td class='utilization %s'>%d%%</td>\n", utilizationClass, utilization)
+			fmt.Fprintf(wr, "<td class='students'>")
+
+			groups := w.sessionGroups[i]
+			var studentNames []string
+			for _, group := range groups {
+				studentNames = append(studentNames, group.students...)
+			}
+			fmt.Fprintf(wr, "%s", strings.Join(studentNames, ", "))
+			fmt.Fprintf(wr, "</td>\n")
+		}
+		fmt.Fprintf(wr, "</tr>\n")
+	}
+
+	fmt.Fprintf(wr, "</tbody>\n</table>\n")
+	fmt.Fprintf(wr, "</div>\n")
+}
+
+func writeWorkshopsHTMLStyle(wr io.Writer) {
+	// Write CSS styles
+	fmt.Fprintf(wr, `<style>
+.workshop {
+    margin-bottom: 2em;
+    padding: 1em;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.workshop h3 {
+    margin-top: 0;
+    color: #333;
+}
+.schedule {
+    width: 100%%;
+    border-collapse: collapse;
+    margin-top: 1em;
+}
+.schedule th, .schedule td {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+.schedule th {
+    background-color: #f5f5f5;
+}
+.utilization {
+    font-weight: bold;
+}
+.utilization.low {
+    color: #dc3545;
+}
+.utilization.high {
+    color: #28a745;
+}
+.students {
+    font-size: 0.9em;
+}
+</style>
+`)
+}
+
+func PrintWorkshopsHTML(wr io.Writer, workshops map[string]*Workshop) {
+	// Write CSS first
+	writeWorkshopsHTMLStyle(wr)
+
+	// Sort workshops by ID for consistent display
+	var sortedIDs []string
+	for id := range workshops {
+		sortedIDs = append(sortedIDs, id)
+	}
+	slices.Sort(sortedIDs)
+
+	// Write each workshop
+	for _, id := range sortedIDs {
+		workshops[id].PrintHTML(wr)
+	}
 }

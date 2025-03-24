@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 var teacherFirstNames = []string{
@@ -70,9 +69,6 @@ type nameMapping struct {
 }
 
 func randomizeNames(inputFile, outputFile string) error {
-	// Seed the random number generator
-	rand.Seed(time.Now().UnixNano())
-
 	// Read the input file
 	file, err := os.Open(inputFile)
 	if err != nil {
