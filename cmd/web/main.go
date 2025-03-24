@@ -287,6 +287,9 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
     </div>
     <h1>Scheduling Results</h1>
     
+    <h2>Final Schedule</h2>
+    <pre>{{.Output}}</pre>
+
     <div class="summary">
         <h3>Summary</h3>
         <p>
@@ -302,9 +305,6 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
         <h2>Processing Logs</h2>
         <pre>{{.Logs}}</pre>
     </div>
-
-    <h2>Final Schedule</h2>
-    <pre>{{.Output}}</pre>
 </body>
 </html>
 `
