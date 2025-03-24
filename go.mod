@@ -1,6 +1,6 @@
 module github.com/clarendonjbbp/casd
 
-go 1.22.1
+go 1.23.3
 
 require (
 	github.com/dariubs/percent v1.0.0
