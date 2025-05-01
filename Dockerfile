@@ -1,6 +1,7 @@
 # Build stage
 ARG go_version=1.23.3
-FROM --platform=$BUILDPLATFORM golang:${go_version}-alpine AS builder
+ARG alpine_version=3.21
+FROM --platform=$BUILDPLATFORM golang:${go_version}-alpine${alpine_version} AS builder
 
 # Set the working directory
 WORKDIR /build
@@ -20,7 +21,7 @@ ARG TARGETOS
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o server ./cmd/web
 
 # Final stage
-FROM alpine:3.19
+FROM alpine:${alpine_version}
 
 WORKDIR /app
 

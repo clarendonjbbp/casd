@@ -38,6 +38,7 @@ PLATFORMS ?= linux/amd64,linux/arm64
 IMAGE_NAME ?= sorter
 TAG ?= latest
 go_version := $(shell sed -En 's/^go[ ]+([0-9.]+).*/\1/p' go.mod)
+ALPINE_VERSION ?= 3.21
 
 E:=@
 ifeq ($(V),1)
@@ -129,6 +130,7 @@ docker-build: container-builder
 	docker buildx build \
 		--platform $(PLATFORMS) \
 		--build-arg go_version=$(go_version) \
+		--build-arg alpine_version=$(ALPINE_VERSION) \
 		--tag "${IMAGE_NAME}:${TAG}" \
 		--push \
 		. 
