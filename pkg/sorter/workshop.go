@@ -23,6 +23,15 @@ const (
 	SciWorkshop
 )
 
+// SessionTimes defines the schedule for all sessions including recess
+var SessionTimes = []string{
+	"9:40 - 10:10 am",
+	"10:15 - 10:45 am",
+	"10:50 - 11:05 am (Recess)",
+	"11:10 - 11:40 am",
+	"11:45 am - 12:15 pm",
+}
+
 type Workshop struct {
 	Kind            int
 	id              string
@@ -305,34 +314,40 @@ func (w Workshop) PrintHTML(wr io.Writer) {
 	fmt.Fprintf(wr, "<p><strong>Overall utilization:</strong> %d%%</p>\n", w.OverallUtilization())
 
 	fmt.Fprintf(wr, "<table class='schedule'>\n")
-	fmt.Fprintf(wr, "<thead>\n<tr>\n<th>Session</th>\n<th>Utilization</th>\n<th>Students</th>\n</tr>\n</thead>\n")
+	fmt.Fprintf(wr, "<thead>\n<tr>\n<th>Time</th>\n<th>Utilization</th>\n<th>Students</th>\n</tr>\n</thead>\n")
 	fmt.Fprintf(wr, "<tbody>\n")
 
-	for i := 0; i < numSessions; i++ {
+	workshopIndex := 0
+	for i := 0; i < len(SessionTimes); i++ {
 		fmt.Fprintf(wr, "<tr>\n")
-		fmt.Fprintf(wr, "<td>%d</td>\n", i+1)
-
-		if w.SpotsAvailable[i] == -1 {
-			fmt.Fprintf(wr, "<td>-</td>\n<td>-</td>\n")
+		if i == 2 { // Recess row
+			fmt.Fprintf(wr, "<td colspan='3' class='recess'>%s</td>\n", SessionTimes[i])
 		} else {
-			utilization := w.Utilization(i)
-			utilizationClass := "normal"
-			if utilization < 30 {
-				utilizationClass = "low"
-			} else if utilization > 80 {
-				utilizationClass = "high"
-			}
+			fmt.Fprintf(wr, "<td>%s</td>\n", SessionTimes[i])
 
-			fmt.Fprintf(wr, "<td class='utilization %s'>%d%%</td>\n", utilizationClass, utilization)
-			fmt.Fprintf(wr, "<td class='students'>")
+			if workshopIndex < numSessions && w.SpotsAvailable[workshopIndex] != -1 {
+				utilization := w.Utilization(workshopIndex)
+				utilizationClass := "normal"
+				if utilization < 30 {
+					utilizationClass = "low"
+				} else if utilization > 80 {
+					utilizationClass = "high"
+				}
 
-			groups := w.sessionGroups[i]
-			var studentNames []string
-			for _, group := range groups {
-				studentNames = append(studentNames, group.students...)
+				fmt.Fprintf(wr, "<td class='utilization %s'>%d%%</td>\n", utilizationClass, utilization)
+				fmt.Fprintf(wr, "<td class='students'>")
+
+				groups := w.sessionGroups[workshopIndex]
+				var studentNames []string
+				for _, group := range groups {
+					studentNames = append(studentNames, group.students...)
+				}
+				fmt.Fprintf(wr, "%s", strings.Join(studentNames, ", "))
+				fmt.Fprintf(wr, "</td>\n")
+			} else {
+				fmt.Fprintf(wr, "<td>-</td>\n<td>-</td>\n")
 			}
-			fmt.Fprintf(wr, "%s", strings.Join(studentNames, ", "))
-			fmt.Fprintf(wr, "</td>\n")
+			workshopIndex++
 		}
 		fmt.Fprintf(wr, "</tr>\n")
 	}
@@ -378,6 +393,12 @@ func writeWorkshopsHTMLStyle(wr io.Writer) {
 }
 .students {
     font-size: 0.9em;
+}
+.schedule .recess {
+    background-color: #e9ecef;
+    text-align: center;
+    font-style: italic;
+    color: #666;
 }
 </style>
 `)

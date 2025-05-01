@@ -293,18 +293,25 @@ func (g *Group) PrintHTML(w io.Writer) {
 	fmt.Fprintf(w, "</div>\n")
 
 	fmt.Fprintf(w, "<table class='schedule'>\n")
-	fmt.Fprintf(w, "<thead>\n<tr>\n<th>Session</th>\n<th>Workshop ID</th>\n<th>Workshop Name</th>\n<th>Room</th>\n</tr>\n</thead>\n")
+	fmt.Fprintf(w, "<thead>\n<tr>\n<th>Time</th>\n<th>Workshop ID</th>\n<th>Workshop Name</th>\n<th>Room</th>\n</tr>\n</thead>\n")
 	fmt.Fprintf(w, "<tbody>\n")
 
-	for i, workshop := range g.workshops {
+	workshopIndex := 0
+	for i := 0; i < len(SessionTimes); i++ {
 		fmt.Fprintf(w, "<tr>\n")
-		fmt.Fprintf(w, "<td>%d</td>\n", i+1)
-		if workshop != nil {
-			fmt.Fprintf(w, "<td>%s</td>\n", workshop.id)
-			fmt.Fprintf(w, "<td>%s</td>\n", workshop.Name)
-			fmt.Fprintf(w, "<td>%s</td>\n", workshop.room)
+		if i == 2 { // Recess row
+			fmt.Fprintf(w, "<td colspan='4' class='recess'>%s</td>\n", SessionTimes[i])
 		} else {
-			fmt.Fprintf(w, "<td colspan='3' class='unfilled'>Not Scheduled</td>\n")
+			fmt.Fprintf(w, "<td>%s</td>\n", SessionTimes[i])
+			if workshopIndex < len(g.workshops) && g.workshops[workshopIndex] != nil {
+				workshop := g.workshops[workshopIndex]
+				fmt.Fprintf(w, "<td>%s</td>\n", workshop.id)
+				fmt.Fprintf(w, "<td>%s</td>\n", workshop.Name)
+				fmt.Fprintf(w, "<td>%s</td>\n", workshop.room)
+			} else {
+				fmt.Fprintf(w, "<td colspan='3' class='unfilled'>Not Scheduled</td>\n")
+			}
+			workshopIndex++
 		}
 		fmt.Fprintf(w, "</tr>\n")
 	}
@@ -354,6 +361,12 @@ func PrintGroupsHTML(w io.Writer, groups []*Group) {
     color: #dc3545;
     text-align: center;
     font-style: italic;
+}
+.group .schedule .recess {
+    background-color: #e9ecef;
+    text-align: center;
+    font-style: italic;
+    color: #666;
 }
 </style>
 `)
