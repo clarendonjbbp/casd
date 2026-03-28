@@ -32,10 +32,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Install dependencies
-        run: |
-          make install-tools
-
       - name: Build binaries
         run: make build
 
