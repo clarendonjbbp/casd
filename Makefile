@@ -35,7 +35,7 @@ endif
 DIR := ${CURDIR}
 build_dir := $(DIR)/.build/$(os1)-$(arch1)
 PLATFORMS ?= linux/amd64,linux/arm64
-IMAGE_NAME ?= sorter
+IMAGE_NAME ?= ghcr.io/sorter
 TAG ?= latest
 go_version := $(shell sed -En 's/^go[ ]+([0-9.]+).*/\1/p' go.mod)
 ALPINE_VERSION ?= 3.21
