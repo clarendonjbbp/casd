@@ -64,7 +64,7 @@ jobs:
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
    
       - name: Build Docker image
-        run: TAG=$NEW_TAG make docker-build
+        run: TAG=${{ steps.bump.outputs.new_tag }} make docker-build
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
