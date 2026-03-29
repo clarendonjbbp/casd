@@ -51,9 +51,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Build Docker image
-        run: make docker-build
 
       - name: Bump version tag
         id: bump
@@ -65,9 +62,10 @@ jobs:
           NEW_PATCH=$((PATCH + 1))
           NEW_TAG="v${MAJOR}.${MINOR}.${NEW_PATCH}"
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+   
+      - name: Build Docker image
+        run: TAG=$NEW_TAG make docker-build
 
-      - name: Push new Docker image
-        run: TAG=${{ steps.bump.outputs.new_tag }} make docker-push
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
