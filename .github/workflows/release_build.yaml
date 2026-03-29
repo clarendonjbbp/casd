@@ -63,7 +63,7 @@ jobs:
           NEW_TAG="v${MAJOR}.${MINOR}.${NEW_PATCH}"
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
 
-- name: Create Git tag
+      - name: Create Git tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
