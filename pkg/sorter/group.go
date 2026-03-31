@@ -189,7 +189,7 @@ func (g *Group) HowPreferredIsBookedWorkshop(session int) int {
 	}
 
 	var preferences []string
-	if idToKind(workshop.id) != ArtWorkshop {
+	if idToKind(workshop.id) == ArtWorkshop {
 		preferences = g.ArtIDs
 	} else {
 		preferences = g.SciIDs
@@ -209,35 +209,35 @@ func (g Group) NumStudents() int {
 }
 
 func (g *Group) Print(w io.Writer) {
-	fmt.Fprintf(w, "Teacher = %s  \n", g.Teacher)
+	_, _ = fmt.Fprintf(w, "Teacher = %s  \n", g.Teacher)
 	if g.Grade == 0 {
-		fmt.Fprintf(w, "Grade = K  \n")
+		_, _ = fmt.Fprintf(w, "Grade = K  \n")
 	} else {
-		fmt.Fprintf(w, "Grade = %d  \n", g.Grade)
+		_, _ = fmt.Fprintf(w, "Grade = %d  \n", g.Grade)
 	}
-	fmt.Fprintf(w, "ID = %s  \n", g.id)
+	_, _ = fmt.Fprintf(w, "ID = %s  \n", g.id)
 	//fmt.Fprintf(w, "Satisfaction =  %d\n", g.GetSatisfaction())
-	fmt.Fprintf(w, "Students =  %v  \n", strings.Join(g.students, ","))
+	_, _ = fmt.Fprintf(w, "Students =  %v  \n", strings.Join(g.students, ","))
 	//fmt.Fprintf(w, "Art Preferences = %v  \n", g.ArtIDs)
 	if len(g.ParentIDs) > 0 {
 		parentIDs := []string{}
 		for parentID := range g.ParentIDs {
 			parentIDs = append(parentIDs, parentID)
 		}
-		fmt.Fprintf(w, "Group contains child of presenter or assistant of workshop = %v  \n", strings.Join(parentIDs, ","))
+		_, _ = fmt.Fprintf(w, "Group contains child of presenter or assistant of workshop = %v  \n", strings.Join(parentIDs, ","))
 	}
-	fmt.Fprintln(w, "Schedule")
-	fmt.Fprintln(w, "| ID | Class | Room |")
-	fmt.Fprintln(w, "| -- | ----- | ---- |")
+	_, _ = fmt.Fprintln(w, "Schedule")
+	_, _ = fmt.Fprintln(w, "| ID | Class | Room |")
+	_, _ = fmt.Fprintln(w, "| -- | ----- | ---- |")
 	for _, workshop := range g.workshops {
 		if workshop != nil {
-			fmt.Fprintf(w, "| %s | %s | %s |\n", workshop.id, workshop.Name, workshop.room)
+			_, _ = fmt.Fprintf(w, "| %s | %s | %s |\n", workshop.id, workshop.Name, workshop.room)
 		} else {
-			fmt.Fprintf(w, "| - | - | - |\n")
+			_, _ = fmt.Fprintf(w, "| - | - | - |\n")
 			log.Printf("====UNFILLED SLOT====\n")
 		}
 	}
-	fmt.Fprintf(w, "\n---\n\n")
+	_, _ = fmt.Fprintf(w, "\n---\n\n")
 }
 
 func SortGroupsByPrefferedArtSession(sessionNumber int, groups []*Group) []*Group {
@@ -270,17 +270,17 @@ func PrintGroups(w io.Writer, groups []*Group) {
 }
 
 func (g *Group) PrintHTML(w io.Writer) {
-	fmt.Fprintf(w, "<div class='group'>\n")
-	fmt.Fprintf(w, "<h3>%s</h3>\n", g.id)
+	_, _ = fmt.Fprintf(w, "<div class='group'>\n")
+	_, _ = fmt.Fprintf(w, "<h3>%s</h3>\n", g.id)
 
-	fmt.Fprintf(w, "<div class='group-details'>\n")
-	fmt.Fprintf(w, "<p><strong>Teacher:</strong> %s</p>\n", g.Teacher)
+	_, _ = fmt.Fprintf(w, "<div class='group-details'>\n")
+	_, _ = fmt.Fprintf(w, "<p><strong>Teacher:</strong> %s</p>\n", g.Teacher)
 	if g.Grade == 0 {
-		fmt.Fprintf(w, "<p><strong>Grade:</strong> K</p>\n")
+		_, _ = fmt.Fprintf(w, "<p><strong>Grade:</strong> K</p>\n")
 	} else {
-		fmt.Fprintf(w, "<p><strong>Grade:</strong> %d</p>\n", g.Grade)
+		_, _ = fmt.Fprintf(w, "<p><strong>Grade:</strong> %d</p>\n", g.Grade)
 	}
-	fmt.Fprintf(w, "<p><strong>Students:</strong> %s</p>\n", strings.Join(g.students, ", "))
+	_, _ = fmt.Fprintf(w, "<p><strong>Students:</strong> %s</p>\n", strings.Join(g.students, ", "))
 
 	if len(g.ParentIDs) > 0 {
 		parentIDs := make([]string, 0, len(g.ParentIDs))
@@ -288,85 +288,96 @@ func (g *Group) PrintHTML(w io.Writer) {
 			parentIDs = append(parentIDs, parentID)
 		}
 		sort.Strings(parentIDs)
-		fmt.Fprintf(w, "<p><strong>Parent Workshops:</strong> %s</p>\n", strings.Join(parentIDs, ", "))
+		_, _ = fmt.Fprintf(w, "<p><strong>Parent Workshops:</strong> %s</p>\n", strings.Join(parentIDs, ", "))
 	}
-	fmt.Fprintf(w, "</div>\n")
+	_, _ = fmt.Fprintf(w, "</div>\n")
 
-	fmt.Fprintf(w, "<table class='schedule'>\n")
-	fmt.Fprintf(w, "<thead>\n<tr>\n<th>Time</th>\n<th>Workshop ID</th>\n<th>Workshop Name</th>\n<th>Room</th>\n</tr>\n</thead>\n")
-	fmt.Fprintf(w, "<tbody>\n")
+	_, _ = fmt.Fprintf(w, "<table class='schedule'>\n")
+	_, _ = fmt.Fprintf(w, "<thead>\n<tr>\n<th>Time</th>\n<th>Workshop ID</th>\n<th>Workshop Name</th>\n<th>Room</th>\n</tr>\n</thead>\n")
+	_, _ = fmt.Fprintf(w, "<tbody>\n")
 
 	workshopIndex := 0
 	for i := 0; i < len(SessionTimes); i++ {
-		fmt.Fprintf(w, "<tr>\n")
+		_, _ = fmt.Fprintf(w, "<tr>\n")
 		if i == 2 { // Recess row
-			fmt.Fprintf(w, "<td colspan='4' class='recess'>%s</td>\n", SessionTimes[i])
+			_, _ = fmt.Fprintf(w, "<td colspan='4' class='recess'>%s</td>\n", SessionTimes[i])
 		} else {
-			fmt.Fprintf(w, "<td>%s</td>\n", SessionTimes[i])
+			_, _ = fmt.Fprintf(w, "<td>%s</td>\n", SessionTimes[i])
 			if workshopIndex < len(g.workshops) && g.workshops[workshopIndex] != nil {
 				workshop := g.workshops[workshopIndex]
-				fmt.Fprintf(w, "<td>%s</td>\n", workshop.id)
-				fmt.Fprintf(w, "<td>%s</td>\n", workshop.Name)
-				fmt.Fprintf(w, "<td>%s</td>\n", workshop.room)
+				_, _ = fmt.Fprintf(w, "<td>%s</td>\n", workshop.id)
+				_, _ = fmt.Fprintf(w, "<td>%s</td>\n", workshop.Name)
+				_, _ = fmt.Fprintf(w, "<td>%s</td>\n", workshop.room)
 			} else {
-				fmt.Fprintf(w, "<td colspan='3' class='unfilled'>Not Scheduled</td>\n")
+				_, _ = fmt.Fprintf(w, "<td colspan='3' class='unfilled'>Not Scheduled</td>\n")
 			}
 			workshopIndex++
 		}
-		fmt.Fprintf(w, "</tr>\n")
+		_, _ = fmt.Fprintf(w, "</tr>\n")
 	}
 
-	fmt.Fprintf(w, "</tbody>\n</table>\n")
-	fmt.Fprintf(w, "</div>\n")
+	_, _ = fmt.Fprintf(w, "</tbody>\n</table>\n")
+	_, _ = fmt.Fprintf(w, "</div>\n")
 }
 
 func PrintGroupsHTML(w io.Writer, groups []*Group) {
 	// Write CSS styles
-	fmt.Fprintf(w, `<style>
+	_, _ = fmt.Fprintf(w, `<style>
 .group {
-    margin-bottom: 2em;
-    padding: 1em;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background-color: #fff;
+    margin-bottom: 1.5em;
+    padding: 1.2em;
+    border: 1px solid rgba(36, 55, 76, 0.14);
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(244,250,255,0.95));
+    box-shadow: 0 14px 38px rgba(36, 55, 76, 0.1);
 }
 .group h3 {
     margin-top: 0;
-    color: #333;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 0.5em;
+    color: #141f26;
+    border-bottom: 1px solid rgba(36, 55, 76, 0.14);
+    padding-bottom: 0.6em;
+    font-family: "Chewy", "Marker Felt", "Chalkboard SE", "Comic Sans MS", "Trebuchet MS", sans-serif;
+    font-size: 1.35rem;
+    text-transform: uppercase;
 }
 .group-details {
     margin: 1em 0;
+    display: grid;
+    gap: 0.35em;
 }
 .group-details p {
-    margin: 0.5em 0;
+    margin: 0;
+    color: #465963;
 }
 .group .schedule {
     width: 100%%;
     border-collapse: collapse;
     margin-top: 1em;
+    overflow: hidden;
+    border-radius: 18px;
 }
 .group .schedule th,
 .group .schedule td {
-    padding: 8px;
+    padding: 10px 12px;
     text-align: left;
-    border: 1px solid #ddd;
+    border: 1px solid rgba(125, 138, 142, 0.2);
 }
 .group .schedule th {
-    background-color: #f5f5f5;
+    background-color: #e9f4fd;
     font-weight: bold;
+    color: #1d4667;
 }
 .group .schedule .unfilled {
-    color: #dc3545;
+    color: #c53a44;
     text-align: center;
     font-style: italic;
+    background: #fff2f3;
 }
 .group .schedule .recess {
-    background-color: #e9ecef;
+    background-color: #eef7ec;
     text-align: center;
     font-style: italic;
-    color: #666;
+    color: #4a6c55;
 }
 </style>
 `)

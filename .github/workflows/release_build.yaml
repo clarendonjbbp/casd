@@ -5,6 +5,16 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      version_bump:
+        description: Version segment to increment
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 jobs:
   build:
@@ -35,7 +45,7 @@ jobs:
         run: make lint
 
       - name: Run tests
-        run: go test ./... -run TestName
+        run: make test
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
@@ -54,13 +64,51 @@ jobs:
 
       - name: Bump version tag
         id: bump
+        env:
+          VERSION_BUMP: ${{ github.event_name == 'workflow_dispatch' && inputs.version_bump || '' }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message || '' }}
         run: |
           # Get latest tag
           LATEST_TAG=$(git describe --tags --abbrev=0 | sed 's/^v//')
-          # Increment patch version
           IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_TAG"
-          NEW_PATCH=$((PATCH + 1))
-          NEW_TAG="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+
+          if [ -z "$VERSION_BUMP" ]; then
+            case "$COMMIT_MESSAGE" in
+              *"[major]"*|*"#major"*)
+                VERSION_BUMP=major
+                ;;
+              *"[minor]"*|*"#minor"*)
+                VERSION_BUMP=minor
+                ;;
+              *"[patch]"*|*"#patch"*)
+                VERSION_BUMP=patch
+                ;;
+              *)
+                VERSION_BUMP=patch
+                ;;
+            esac
+          fi
+
+          case "$VERSION_BUMP" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+            *)
+              echo "Unsupported version bump: $VERSION_BUMP"
+              exit 1
+              ;;
+          esac
+
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Create Git tag

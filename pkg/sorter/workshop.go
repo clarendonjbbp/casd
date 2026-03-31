@@ -6,14 +6,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"maps"
 	"os"
 	"slices"
 	"strconv"
 	"strings"
-
-	"golang.org/x/exp/maps"
-
-	"github.com/dariubs/percent"
 )
 
 const (
@@ -67,7 +64,7 @@ func ReadWorkshops(file string, kind int) (map[string]*Workshop, error) {
 		// Parse fields as needed
 		id, name, found := strings.Cut(record[0], "-")
 		if !found {
-			return nil, fmt.Errorf("Invalid workshop name \"%s\"", record[0])
+			return nil, fmt.Errorf("invalid workshop name %q", record[0])
 		}
 		id = strings.Trim(id, " ")
 		name = strings.Trim(name, " ")
@@ -170,7 +167,7 @@ func (w Workshop) Utilization(sessionNumber int) int {
 		return -1
 	}
 
-	return int(percent.PercentOf(w.Capacity-w.SpotsAvailable[sessionNumber], w.Capacity))
+	return percentOf(w.Capacity-w.SpotsAvailable[sessionNumber], w.Capacity)
 }
 
 func (w Workshop) UtilizationWithoutGroup(sessionNumber int, group *Group) int {
@@ -178,7 +175,7 @@ func (w Workshop) UtilizationWithoutGroup(sessionNumber int, group *Group) int {
 		return -1
 	}
 
-	return int(percent.PercentOf(w.Capacity-(w.SpotsAvailable[sessionNumber]+group.NumStudents()), w.Capacity))
+	return percentOf(w.Capacity-(w.SpotsAvailable[sessionNumber]+group.NumStudents()), w.Capacity)
 }
 
 func (w Workshop) OverallUtilization() int {
@@ -191,7 +188,7 @@ func (w Workshop) OverallUtilization() int {
 		}
 	}
 
-	return int(percent.PercentOf(overallSpotsTaken, overallCapacity))
+	return percentOf(overallSpotsTaken, overallCapacity)
 }
 
 func (w Workshop) GetID() string {
@@ -199,32 +196,32 @@ func (w Workshop) GetID() string {
 }
 
 func (w Workshop) Print(wr io.Writer) {
-	fmt.Fprintf(wr, "ID: %s  \n", w.id)
-	fmt.Fprintf(wr, "Name: %s  \n", w.Name)
-	fmt.Fprintf(wr, "Capacity per session: %d  \n", w.Capacity)
-	fmt.Fprintf(wr, "Overall utilization: %d%%  \n", w.OverallUtilization())
-	fmt.Fprintf(wr, "Schedule  \n")
-	fmt.Fprintln(wr, "| Utilization | Students |")
-	fmt.Fprintln(wr, "| --------- | -------- |")
+	_, _ = fmt.Fprintf(wr, "ID: %s  \n", w.id)
+	_, _ = fmt.Fprintf(wr, "Name: %s  \n", w.Name)
+	_, _ = fmt.Fprintf(wr, "Capacity per session: %d  \n", w.Capacity)
+	_, _ = fmt.Fprintf(wr, "Overall utilization: %d%%  \n", w.OverallUtilization())
+	_, _ = fmt.Fprintf(wr, "Schedule  \n")
+	_, _ = fmt.Fprintln(wr, "| Utilization | Students |")
+	_, _ = fmt.Fprintln(wr, "| --------- | -------- |")
 	for i := 0; i < numSessions; i++ {
 		if w.SpotsAvailable[i] == -1 {
-			fmt.Fprintln(wr, "| - | - |")
+			_, _ = fmt.Fprintln(wr, "| - | - |")
 
 		} else {
-			fmt.Fprintf(wr, "| %d%% | ", w.Utilization(i))
+			_, _ = fmt.Fprintf(wr, "| %d%% | ", w.Utilization(i))
 
 			groups := w.sessionGroups[i]
 			for _, group := range groups {
-				fmt.Fprintf(wr, "%v,", strings.Join(group.students, ","))
+				_, _ = fmt.Fprintf(wr, "%v,", strings.Join(group.students, ","))
 			}
-			fmt.Fprintf(wr, " |\n")
+			_, _ = fmt.Fprintf(wr, " |\n")
 		}
 	}
-	fmt.Fprintf(wr, "\n---\n\n")
+	_, _ = fmt.Fprintf(wr, "\n---\n\n")
 }
 
 func SortWorkshopsByOverallUtilization(workshops map[string]*Workshop) []*Workshop {
-	sortedWorkshops := maps.Values(workshops)
+	sortedWorkshops := slices.Collect(maps.Values(workshops))
 
 	slices.SortFunc(sortedWorkshops, func(a, b *Workshop) int {
 		if n := cmp.Compare(a.OverallUtilization(), b.OverallUtilization()); n != 0 {
@@ -273,7 +270,7 @@ func readAndParseCSV(file string) (*csv.Reader, error) {
 	// Dump the header line
 	_, err = reader.Read()
 	if err == io.EOF {
-		return nil, fmt.Errorf("Empty csv file: %v", err)
+		return nil, fmt.Errorf("empty csv file: %v", err)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -306,24 +303,31 @@ func remove(slice []*Group, s int) []*Group {
 	return append(slice[:s], slice[s+1:]...)
 }
 
-func (w Workshop) PrintHTML(wr io.Writer) {
-	fmt.Fprintf(wr, "<div class='workshop'>\n")
-	fmt.Fprintf(wr, "<h3>%s</h3>\n", w.Name)
-	fmt.Fprintf(wr, "<p><strong>ID:</strong> %s</p>\n", w.id)
-	fmt.Fprintf(wr, "<p><strong>Capacity per session:</strong> %d</p>\n", w.Capacity)
-	fmt.Fprintf(wr, "<p><strong>Overall utilization:</strong> %d%%</p>\n", w.OverallUtilization())
+func percentOf(part, total int) int {
+	if total == 0 {
+		return 0
+	}
+	return part * 100 / total
+}
 
-	fmt.Fprintf(wr, "<table class='schedule'>\n")
-	fmt.Fprintf(wr, "<thead>\n<tr>\n<th>Time</th>\n<th>Utilization</th>\n<th>Students</th>\n</tr>\n</thead>\n")
-	fmt.Fprintf(wr, "<tbody>\n")
+func (w Workshop) PrintHTML(wr io.Writer) {
+	_, _ = fmt.Fprintf(wr, "<div class='workshop'>\n")
+	_, _ = fmt.Fprintf(wr, "<h3>%s</h3>\n", w.Name)
+	_, _ = fmt.Fprintf(wr, "<p><strong>ID:</strong> %s</p>\n", w.id)
+	_, _ = fmt.Fprintf(wr, "<p><strong>Capacity per session:</strong> %d</p>\n", w.Capacity)
+	_, _ = fmt.Fprintf(wr, "<p><strong>Overall utilization:</strong> %d%%</p>\n", w.OverallUtilization())
+
+	_, _ = fmt.Fprintf(wr, "<table class='schedule'>\n")
+	_, _ = fmt.Fprintf(wr, "<thead>\n<tr>\n<th>Time</th>\n<th>Utilization</th>\n<th>Students</th>\n</tr>\n</thead>\n")
+	_, _ = fmt.Fprintf(wr, "<tbody>\n")
 
 	workshopIndex := 0
 	for i := 0; i < len(SessionTimes); i++ {
-		fmt.Fprintf(wr, "<tr>\n")
+		_, _ = fmt.Fprintf(wr, "<tr>\n")
 		if i == 2 { // Recess row
-			fmt.Fprintf(wr, "<td colspan='3' class='recess'>%s</td>\n", SessionTimes[i])
+			_, _ = fmt.Fprintf(wr, "<td colspan='3' class='recess'>%s</td>\n", SessionTimes[i])
 		} else {
-			fmt.Fprintf(wr, "<td>%s</td>\n", SessionTimes[i])
+			_, _ = fmt.Fprintf(wr, "<td>%s</td>\n", SessionTimes[i])
 
 			if workshopIndex < numSessions && w.SpotsAvailable[workshopIndex] != -1 {
 				utilization := w.Utilization(workshopIndex)
@@ -334,40 +338,45 @@ func (w Workshop) PrintHTML(wr io.Writer) {
 					utilizationClass = "high"
 				}
 
-				fmt.Fprintf(wr, "<td class='utilization %s'>%d%%</td>\n", utilizationClass, utilization)
-				fmt.Fprintf(wr, "<td class='students'>")
+				_, _ = fmt.Fprintf(wr, "<td class='utilization %s'>%d%%</td>\n", utilizationClass, utilization)
+				_, _ = fmt.Fprintf(wr, "<td class='students'>")
 
 				groups := w.sessionGroups[workshopIndex]
 				var studentNames []string
 				for _, group := range groups {
 					studentNames = append(studentNames, group.students...)
 				}
-				fmt.Fprintf(wr, "%s", strings.Join(studentNames, ", "))
-				fmt.Fprintf(wr, "</td>\n")
+				_, _ = fmt.Fprintf(wr, "%s", strings.Join(studentNames, ", "))
+				_, _ = fmt.Fprintf(wr, "</td>\n")
 			} else {
-				fmt.Fprintf(wr, "<td>-</td>\n<td>-</td>\n")
+				_, _ = fmt.Fprintf(wr, "<td>-</td>\n<td>-</td>\n")
 			}
 			workshopIndex++
 		}
-		fmt.Fprintf(wr, "</tr>\n")
+		_, _ = fmt.Fprintf(wr, "</tr>\n")
 	}
 
-	fmt.Fprintf(wr, "</tbody>\n</table>\n")
-	fmt.Fprintf(wr, "</div>\n")
+	_, _ = fmt.Fprintf(wr, "</tbody>\n</table>\n")
+	_, _ = fmt.Fprintf(wr, "</div>\n")
 }
 
 func writeWorkshopsHTMLStyle(wr io.Writer) {
 	// Write CSS styles
-	fmt.Fprintf(wr, `<style>
+	_, _ = fmt.Fprintf(wr, `<style>
 .workshop {
-    margin-bottom: 2em;
-    padding: 1em;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    margin-bottom: 1.5em;
+    padding: 1.2em;
+    border: 1px solid rgba(36, 55, 76, 0.14);
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(244,250,255,0.95));
+    box-shadow: 0 14px 38px rgba(36, 55, 76, 0.1);
 }
 .workshop h3 {
     margin-top: 0;
-    color: #333;
+    color: #141f26;
+    font-family: "Chewy", "Marker Felt", "Chalkboard SE", "Comic Sans MS", "Trebuchet MS", sans-serif;
+    font-size: 1.35rem;
+    text-transform: uppercase;
 }
 .schedule {
     width: 100%%;
@@ -375,30 +384,31 @@ func writeWorkshopsHTMLStyle(wr io.Writer) {
     margin-top: 1em;
 }
 .schedule th, .schedule td {
-    padding: 8px;
+    padding: 10px 12px;
     text-align: left;
-    border: 1px solid #ddd;
+    border: 1px solid rgba(125, 138, 142, 0.2);
 }
 .schedule th {
-    background-color: #f5f5f5;
+    background-color: #e9f4fd;
+    color: #1d4667;
 }
 .utilization {
     font-weight: bold;
 }
 .utilization.low {
-    color: #dc3545;
+    color: #c53a44;
 }
 .utilization.high {
-    color: #28a745;
+    color: #2f8b51;
 }
 .students {
     font-size: 0.9em;
 }
 .schedule .recess {
-    background-color: #e9ecef;
+    background-color: #eef7ec;
     text-align: center;
     font-style: italic;
-    color: #666;
+    color: #4a6c55;
 }
 </style>
 `)

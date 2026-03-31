@@ -74,7 +74,11 @@ func randomizeNames(inputFile, outputFile string) error {
 	if err != nil {
 		return fmt.Errorf("error opening input file: %v", err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			log.Printf("error closing input file: %v", closeErr)
+		}
+	}()
 
 	// Create a CSV reader
 	reader := csv.NewReader(file)
@@ -136,7 +140,11 @@ func randomizeNames(inputFile, outputFile string) error {
 	if err != nil {
 		return fmt.Errorf("error creating output file: %v", err)
 	}
-	defer outFile.Close()
+	defer func() {
+		if closeErr := outFile.Close(); closeErr != nil {
+			log.Printf("error closing output file: %v", closeErr)
+		}
+	}()
 
 	// Write the modified records
 	writer := csv.NewWriter(outFile)

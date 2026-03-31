@@ -1,0 +1,131 @@
+package sorter
+
+import (
+	"path/filepath"
+	"slices"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestBookWorkshopIfAvailableBooksSessionWithMostRemainingCapacity(t *testing.T) {
+	group := testGroup("group-1", 3, 4, nil, nil)
+	workshop := testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{5, 10, -1, -1})
+
+	booked := BookWorkshopIfAvailable(workshop, group)
+
+	assert.True(t, booked)
+	assert.Same(t, workshop, group.GetWorkshop(1))
+	assert.Equal(t, 6, workshop.SpotsAvailable[1])
+	require.Len(t, workshop.GetGroupsForSession(1), 1)
+	assert.Same(t, group, workshop.GetGroupsForSession(1)[0])
+}
+
+func TestBookWorkshopIfAvailableRejectsOutOfGradeRange(t *testing.T) {
+	group := testGroup("group-1", 1, 4, nil, nil)
+	workshop := testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{10, -1, -1, -1})
+
+	booked := BookWorkshopIfAvailable(workshop, group)
+
+	assert.False(t, booked)
+}
+
+func TestBookWorkshopIfAvailableRejectsDuplicateWorkshop(t *testing.T) {
+	group := testGroup("group-1", 3, 4, nil, nil)
+	workshop := testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{10, 10, -1, -1})
+	group.BookWorkshop(0, workshop)
+
+	booked := BookWorkshopIfAvailable(workshop, group)
+
+	assert.False(t, booked)
+}
+
+func TestBookWorkshopIfAvailableRejectsWhenCapacityIsTooSmall(t *testing.T) {
+	group := testGroup("group-1", 3, 4, nil, nil)
+	workshop := testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{3, -1, -1, -1})
+
+	booked := BookWorkshopIfAvailable(workshop, group)
+
+	assert.False(t, booked)
+}
+
+func TestRebalanceWorkshopsMovesGroupIntoUnderutilizedSession(t *testing.T) {
+	group := testGroup("group-1", 3, 2, []string{"A9"}, nil)
+	oldWorkshop := testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{0, -1, -1, -1})
+	targetWorkshop := testWorkshop("A2", ArtWorkshop, 3, 5, 10, []int{8, -1, -1, -1})
+
+	oldWorkshop.sessionGroups[0] = []*Group{group}
+	group.BookWorkshop(0, oldWorkshop)
+
+	workshops := map[string]*Workshop{
+		oldWorkshop.id:    oldWorkshop,
+		targetWorkshop.id: targetWorkshop,
+	}
+
+	err := RebalanceWorkshops(30, workshops, []*Group{group})
+	require.NoError(t, err)
+	assert.Same(t, targetWorkshop, group.GetWorkshop(0))
+	assert.Equal(t, 2, oldWorkshop.SpotsAvailable[0])
+	assert.Equal(t, 6, targetWorkshop.SpotsAvailable[0])
+	assert.Empty(t, oldWorkshop.GetGroupsForSession(0))
+	require.Len(t, targetWorkshop.GetGroupsForSession(0), 1)
+	assert.Same(t, group, targetWorkshop.GetGroupsForSession(0)[0])
+}
+
+func TestReadCSVFilesLoadsRepositoryFixtures(t *testing.T) {
+	root := filepath.Join("..", "..")
+
+	groups, artWorkshops, sciWorkshops, err := ReadCSVFiles(
+		filepath.Join(root, "groups.csv"),
+		filepath.Join(root, "artworkshops.csv"),
+		filepath.Join(root, "scienceworkshops.csv"),
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, groups)
+	require.NotEmpty(t, artWorkshops)
+	require.NotEmpty(t, sciWorkshops)
+	assert.Equal(t, "Michael", groups[0].Teacher)
+	assert.Equal(t, 4, groups[0].Grade)
+	assert.Equal(t, "Group 1", groups[0].Name)
+	assert.True(t, slices.Equal(groups[0].ArtIDs, []string{"A5", "A7", "A12", "A18"}))
+	_, ok := artWorkshops["A5"]
+	assert.True(t, ok)
+	_, ok = sciWorkshops["S23"]
+	assert.True(t, ok)
+}
+
+func testGroup(id string, grade, students int, artIDs, sciIDs []string) *Group {
+	studentNames := make([]string, students)
+	for i := range studentNames {
+		studentNames[i] = "student"
+	}
+
+	return &Group{
+		Teacher:   "Teacher",
+		Name:      "Group",
+		Grade:     grade,
+		students:  studentNames,
+		ArtIDs:    artIDs,
+		SciIDs:    sciIDs,
+		workshops: make([]*Workshop, 4),
+		ParentIDs: map[string]struct{}{},
+		id:        id,
+	}
+}
+
+func testWorkshop(id string, kind, minGrade, maxGrade, capacity int, spotsAvailable []int) *Workshop {
+	spots := make([]int, len(spotsAvailable))
+	copy(spots, spotsAvailable)
+
+	return &Workshop{
+		Kind:           kind,
+		id:             id,
+		Name:           id,
+		MinGrade:       minGrade,
+		MaxGrade:       maxGrade,
+		Capacity:       capacity,
+		SpotsAvailable: spots,
+		sessionGroups:  make(map[int][]*Group),
+	}
+}

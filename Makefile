@@ -53,12 +53,17 @@ ifeq ($(os1),windows)
 	exe=".exe"
 else
 	go_bin_dir = $(go_dir)/bin
-	go_url = https://storage.googleapis.com/golang/go$(go_version).$(os1)-$(arch2).tar.gz
+	go_url = https://go.dev/dl/go$(go_version).$(os1)-$(arch2).tar.gz
 	exe=
 endif
 go_path := PATH="$(go_bin_dir):$(PATH)"
+go_test_cache := $(DIR)/.build/gocache
+go_mod_cache := $(DIR)/.build/gomodcache
+golangci_lint_local_cache := $(DIR)/.build/golangci-lint-cache
+coverage_profile := $(DIR)/.build/coverage.out
+go_run_env := GOTOOLCHAIN=local GOCACHE="$(go_test_cache)" GOMODCACHE="$(go_mod_cache)"
 
-golangci_lint_version = v1.64.4
+golangci_lint_version = v2.11.4
 golangci_lint_dir = $(build_dir)/golangci_lint/$(golangci_lint_version)
 golangci_lint_bin = $(golangci_lint_dir)/golangci-lint
 golangci_lint_cache = $(golangci_lint_dir)/cache
@@ -91,7 +96,7 @@ $(golangci_lint_bin): | go-check
 	$(E)rm -rf $(dir $(golangci_lint_dir))
 	$(E)mkdir -p $(golangci_lint_dir)
 	$(E)mkdir -p $(golangci_lint_cache)
-	$(E)GOBIN=$(golangci_lint_dir) $(go_path) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_lint_version)
+	$(E)GOBIN=$(golangci_lint_dir) $(go_path) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(golangci_lint_version)
 
 ############################################################################
 # Build targets
@@ -143,11 +148,25 @@ docker-push: docker-build
 # Code cleanliness
 #############################################################################
 
-.PHONY: fmt
+.PHONY: fmt test test-coverage lint lint-code lint-fix
 fmt: ## Run go fmt against code.
 	go fmt ./...
+
+test:
+	mkdir -p $(go_test_cache) $(go_mod_cache)
+	$(go_run_env) go test ./...
+
+test-coverage:
+	mkdir -p $(go_test_cache) $(go_mod_cache) $(DIR)/.build
+	$(go_run_env) go test -coverprofile="$(coverage_profile)" ./...
+	go tool cover -html="$(coverage_profile)"
 
 lint: lint-code
 
 lint-code: $(golangci_lint_bin) | go-check
-	$(E)PATH="$(PATH):$(go_bin_dir)" $(golangci_lint_bin) run ./...
+	$(E)mkdir -p $(go_test_cache) $(go_mod_cache) $(golangci_lint_local_cache)
+	$(E)PATH="$(PATH):$(go_bin_dir)" GOLANGCI_LINT_CACHE="$(golangci_lint_local_cache)" $(go_run_env) $(golangci_lint_bin) run
+
+lint-fix: $(golangci_lint_bin) | go-check
+	$(E)mkdir -p $(go_test_cache) $(go_mod_cache) $(golangci_lint_local_cache)
+	$(E)PATH="$(PATH):$(go_bin_dir)" GOLANGCI_LINT_CACHE="$(golangci_lint_local_cache)" $(go_run_env) $(golangci_lint_bin) run --fix

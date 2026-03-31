@@ -36,12 +36,12 @@ func GetWorkshopFromID(id string, artWorkshops, sciWorkshops map[string]*Worksho
 	if kind == ArtWorkshop {
 		workshop, ok = artWorkshops[id]
 		if !ok {
-			return nil, fmt.Errorf("Art Workshop ID %s not found", id)
+			return nil, fmt.Errorf("art workshop ID %s not found", id)
 		}
 	} else {
 		workshop, ok = sciWorkshops[id]
 		if !ok {
-			return nil, fmt.Errorf("Science Workshop ID %s not found", id)
+			return nil, fmt.Errorf("science workshop ID %s not found", id)
 		}
 	}
 

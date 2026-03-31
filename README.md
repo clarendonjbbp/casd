@@ -17,3 +17,33 @@ $ make build
 go build -o sorter ./cmd/sorter
 go build -o sorter-web ./cmd/web
 ```
+
+## Tests
+
+```bash
+$ make test
+```
+
+To generate and open HTML coverage locally:
+
+```bash
+$ make test-coverage
+```
+
+## Release Version Bumps
+
+The release workflow defaults to a patch bump on pushes to `main`.
+
+To force a larger bump on a normal push, include one of these markers in the commit message:
+
+- `[patch]` or `#patch`
+- `[minor]` or `#minor`
+- `[major]` or `#major`
+
+Example:
+
+```bash
+$ git commit -m "[minor] Refresh scheduler UI and workflow updates"
+```
+
+If no marker is present, the workflow uses a patch bump.
