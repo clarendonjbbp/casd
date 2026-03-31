@@ -18,6 +18,54 @@ go build -o sorter ./cmd/sorter
 go build -o sorter-web ./cmd/web
 ```
 
+## How the algorithm works
+
+The scheduler builds each group's day in stages.
+
+Each group is scheduled into:
+
+- 2 art workshop sessions
+- 2 science workshop sessions
+
+The current scheduling flow is:
+
+1. Read groups, art workshops, and science workshops from CSV.
+2. Normalize duplicate preferences in each group's art and science lists by keeping the first occurrence and dropping lower-ranked duplicates.
+3. Book parent or presenter-linked workshops first.
+4. Run a guarantee pass that tries to give every group:
+   - 1 preferred art workshop
+   - 1 preferred science workshop
+5. Fill the remaining art and science slots using the normal greedy preference order.
+6. If a group still has open slots, fill them from other available workshops.
+7. Rebalance underutilized workshop sessions when possible.
+
+Important booking rules:
+
+- Groups must be within the workshop's grade range.
+- A group cannot be assigned to the same workshop twice.
+- A group can only attend one workshop per time slot.
+- A session must have enough remaining capacity for the entire group.
+- Parent workshops are attempted first, but they still must satisfy grade, time-slot, and capacity constraints.
+
+The greedy parts of the algorithm work like this:
+
+- Within a category, workshops are tried in the order the group requested them.
+- When a workshop has multiple possible sessions, the scheduler prefers sessions with the most remaining capacity.
+- If a preferred workshop cannot be booked, the scheduler moves to the next preference.
+- If no preferred workshop can be booked for a needed slot, the scheduler falls back to other available workshops of the same kind, then other available workshops overall if necessary.
+
+Rebalancing behavior:
+
+- After the initial schedule is built, the sorter tries to improve workshop utilization by moving groups into underfilled sessions.
+- Rebalancing now avoids moves that would take away a group's only preferred art or only preferred science workshop and replace it with a fallback.
+
+The output also reports summary metrics for the final schedule, including:
+
+- overall satisfaction points
+- average satisfaction percent
+- groups with at least 1 preferred art workshop
+- groups with at least 1 preferred science workshop
+
 ## Tests
 
 ```bash
