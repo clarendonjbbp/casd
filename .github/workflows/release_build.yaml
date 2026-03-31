@@ -128,8 +128,8 @@ jobs:
    
       - name: Build Docker image
         run: |
-          TAG=${{ steps.bump.outputs.new_tag }} make docker-build
-          TAG=latest make docker-build
+          TAG=${{ steps.bump.outputs.new_tag }} make docker-push
+          TAG=latest make docker-push
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

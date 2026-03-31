@@ -125,23 +125,24 @@ clean:
 # Docker
 #############################################################################
 
-.PHONY: container-builder docker-build
+.PHONY: container-builder docker-build docker-push
+
+docker_buildx_args = \
+	--platform $(PLATFORMS) \
+	--build-arg go_version=$(go_version) \
+	--build-arg alpine_version=$(ALPINE_VERSION) \
+	--tag "${IMAGE_NAME}:${TAG}"
 
 container-builder:
 	$(E)docker buildx create --platform $(PLATFORMS) --name container-builder --driver docker-container  --node container-builder0  --use
 
 docker-build: container-builder
-	$(E)echo "Building multi-architecture images..."
-	docker buildx build \
-		--platform $(PLATFORMS) \
-		--build-arg go_version=$(go_version) \
-		--build-arg alpine_version=$(ALPINE_VERSION) \
-		--tag "${IMAGE_NAME}:${TAG}" \
-		--push \
-		. 
+	$(E)echo "Validating multi-architecture image build..."
+	docker buildx build $(docker_buildx_args) .
 
-docker-push: docker-build
-	docker push ${IMAGE_NAME}:${TAG}
+docker-push: container-builder
+	$(E)echo "Building and pushing multi-architecture images..."
+	docker buildx build $(docker_buildx_args) --push .
 	
 
 #############################################################################
