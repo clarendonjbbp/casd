@@ -11,9 +11,13 @@ It includes:
 - `cmd/sorter`: command-line scheduler
 - `cmd/web`: web UI for uploading CSVs and viewing schedules
 - `cmd/randomizer`: utility for anonymizing teacher and student names in a groups CSV
-- `pkg/sorter`: core scheduling models and assignment logic
+- `pkg/group`: group data and CSV parsing
+- `pkg/workshop`: workshop data and CSV parsing
+- `pkg/booking`: booking state, relationship logic, scoring, and output rendering
+- `pkg/scheduler`: scheduling orchestration
+- `pkg/model`: shared scheduling constants
 
-The project is lightweight. Most important behavior now lives in shared scheduler code in `pkg/sorter`, with the CLI and web entrypoints acting mostly as thin wrappers.
+The project is lightweight. The CLI and web entrypoints are thin wrappers around `pkg/scheduler`, with schedule state and reporting handled through `pkg/booking`.
 
 ## Repository Layout
 
@@ -24,11 +28,14 @@ The project is lightweight. Most important behavior now lives in shared schedule
 - `cmd/web/templates/home.html`: upload page template
 - `cmd/web/templates/results.html`: results page template
 - `cmd/randomizer/main.go`: CSV name randomizer
-- `pkg/sorter/group.go`: group parsing, preferences, output helpers
-- `pkg/sorter/workshop.go`: workshop parsing, capacity tracking, HTML/text output
-- `pkg/sorter/schedule.go`: shared CSV loading and scheduling flow
-- `pkg/sorter/sorter.go`: shared booking helpers
-- `pkg/sorter/schedule_test.go`: scheduler and scoring tests
+- `pkg/group/group.go`: group parsing and preference normalization
+- `pkg/group/group_test.go`: group CSV parsing tests
+- `pkg/workshop/workshop.go`: workshop parsing and metadata helpers
+- `pkg/booking/booking.go`: booking state, capacity/utilization logic, scoring, and HTML/text output
+- `pkg/booking/booking_test.go`: booking and scoring tests
+- `pkg/scheduler/scheduler.go`: shared CSV loading and scheduling flow
+- `pkg/scheduler/scheduler_test.go`: scheduler behavior tests
+- `pkg/model/model.go`: workshop kind/session constants and session times
 - `groups.csv`, `artworkshops.csv`, `scienceworkshops.csv`: sample inputs
 
 ## What The Scheduler Does
@@ -50,10 +57,10 @@ High-level assignment flow:
 2. Normalize duplicate student preferences by keeping the first occurrence of each workshop ID and dropping lower-ranked duplicates.
 3. Pre-book any required parent/presenter workshops.
 4. Optionally shuffle group order.
-5. Book preferred art workshops.
-6. Book preferred science workshops.
+5. Guarantee one preferred art workshop when feasible.
+6. Guarantee one preferred science workshop when feasible.
 7. Fill remaining needed sessions from available workshops.
-8. Rebalance underutilized sessions when possible.
+8. Rebalance underutilized sessions when possible without breaking the preferred-workshop guarantee when avoidable.
 
 Important constraints enforced by booking logic:
 
@@ -66,7 +73,7 @@ Important constraints enforced by booking logic:
 
 There are four bookable workshop sessions with a recess displayed between the middle two.
 
-Session display times are defined in `pkg/sorter/workshop.go`:
+Session display times are defined in `pkg/model/model.go`:
 
 - `9:40 - 10:10 am`
 - `10:15 - 10:45 am`
@@ -78,16 +85,17 @@ Internally, only 4 workshop slots are booked. The recess row is display-only.
 
 Booking behavior to know:
 
-- `BookWorkshopIfAvailable` chooses from sessions with the most remaining space, then picks randomly among ties.
+- `booking.BookWorkshopIfAvailable` chooses from sessions with the most remaining space, then picks randomly among ties.
 - Preference order matters for direct booking from CSV choices.
 - Rebalancing can move a group from one workshop to another if it helps an underutilized session and does not drop the old session below the minimum utilization threshold.
-- `cmd/sorter` and `cmd/web` both call the shared `sorter.Schedule(...)` API in `pkg/sorter/schedule.go`.
+- `cmd/sorter` and `cmd/web` both call the shared `scheduler.Schedule(...)` API in `pkg/scheduler/scheduler.go`.
+- Output rendering for group/workshop views lives in `pkg/booking`, because it needs both the row data and the booking state.
 
 ## Satisfaction Scoring
 
 Group satisfaction is computed internally as a weighted ranking score and then displayed as a percentage.
 
-Current internal scoring in `pkg/sorter/group.go`:
+Current internal scoring in `pkg/booking/booking.go`:
 
 - parent/presenter workshop: 5 points
 - 1st choice: 4 points
@@ -107,7 +115,7 @@ Important implementation details:
 
 The code expects fixed column positions.
 
-Groups CSV fields used by `pkg/sorter/group.go`:
+Groups CSV fields used by `pkg/group/group.go`:
 
 - column 0: teacher
 - column 2: grade
@@ -117,7 +125,7 @@ Groups CSV fields used by `pkg/sorter/group.go`:
 - columns 9-12: preferred science workshop IDs
 - column 13: space-separated parent workshop IDs
 
-Workshop CSV fields used by `pkg/sorter/workshop.go`:
+Workshop CSV fields used by `pkg/workshop/workshop.go`:
 
 - column 0: workshop identifier and name in the form `ID - Name`
 - column 1: grade range like `K-2` or `4-5`
@@ -245,7 +253,7 @@ Manual `workflow_dispatch` runs can also choose the bump type directly in GitHub
 - Go version is pinned in `go.mod`.
 - The Makefile uses repo-local caches for Go and linting.
 - `golangci-lint` uses the v2 module path.
-- Scheduler tests live in `pkg/sorter/schedule_test.go` and use Testify.
+- Tests live in `pkg/group`, `pkg/booking`, and `pkg/scheduler`, and use Testify.
 - The randomizer is not a generic slice shuffler. It specifically rewrites teacher and student names in a CSV while keeping replacements consistent.
 - The web UI uses embedded templates instead of inline HTML strings.
 - The current homepage/result pages use a Clarendon-school-poster-inspired visual style.
@@ -255,16 +263,17 @@ Manual `workflow_dispatch` runs can also choose the bump type directly in GitHub
 If you are starting fresh, read these in order:
 
 1. `README.md`
-2. `pkg/sorter/schedule.go`
-3. `pkg/sorter/group.go`
-4. `pkg/sorter/workshop.go`
-5. `cmd/web/main.go`
-6. `cmd/web/templates/home.html`
+2. `pkg/scheduler/scheduler.go`
+3. `pkg/booking/booking.go`
+4. `pkg/group/group.go`
+5. `pkg/workshop/workshop.go`
+6. `cmd/web/main.go`
+7. `cmd/web/templates/home.html`
 
 ## Watchouts
 
 - `idToKind` assumes art workshop IDs start with `A`; everything else is treated as science.
 - `readAndParseCSV` skips the first row as a header.
-- Group schedules are stored as a fixed-length slice of 4 workshop pointers.
+- The booking state is the source of truth; groups and workshops no longer own mirrored assignment state.
 - Because some booking decisions use randomness, output can differ between runs when randomization or tie-breaking is involved.
 - If a group has a parent workshop, that workshop consumes one of the group's art or science slots for scheduling and satisfaction purposes.
