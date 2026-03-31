@@ -35,3 +35,8 @@ jobs:
 
       - name: Build binaries
         run: make build
+
+      - name: Validate Docker builds
+        run: |
+          TAG=pr-${{ github.event.number }} make docker-build
+          TAG=pr-${{ github.event.pull_request.head.sha }} make docker-build
