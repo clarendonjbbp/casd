@@ -7,16 +7,30 @@ import (
 )
 
 func BookWorkshopIfAvailable(workshop *Workshop, group *Group) bool {
+	ensureSharedScheduleState(group, workshop)
+
 	if reason := BookingFailureReason(workshop, group); reason != "" {
 		return false
 	}
 
 	sessions := workshop.GetAvailableSessions(group)
 	randSession := sessions[rand.Intn(len(sessions))]
-	workshop.TakeSession(randSession, group)
 	group.BookWorkshop(randSession, workshop)
 
 	return true
+}
+
+func ensureSharedScheduleState(group *Group, workshop *Workshop) {
+	switch {
+	case group.schedule != nil && workshop.schedule == nil:
+		workshop.schedule = group.schedule
+	case group.schedule == nil && workshop.schedule != nil:
+		group.schedule = workshop.schedule
+	case group.schedule == nil && workshop.schedule == nil:
+		state := &ScheduleState{}
+		group.schedule = state
+		workshop.schedule = state
+	}
 }
 
 func BookingFailureReason(workshop *Workshop, group *Group) string {

@@ -39,6 +39,8 @@ func ReadCSVFiles(groupsFile, artWorkshopsFile, sciWorkshopsFile string) ([]*Gro
 }
 
 func Schedule(groups []*Group, artWorkshops, sciWorkshops map[string]*Workshop, opts ScheduleOptions) error {
+	NewScheduleState(groups, artWorkshops, sciWorkshops)
+
 	log.Printf("====Booking Parent Classes===\n")
 	if err := bookParentClasses(groups, artWorkshops, sciWorkshops, opts.ContinueOnParentLookupErr); err != nil {
 		return err
@@ -200,7 +202,7 @@ func RebalanceWorkshops(minUtilization int, workshops map[string]*Workshop, grou
 				if group.IsEnrolledInWorkshop(workshop.GetID()) {
 					continue
 				}
-				if workshop.SpotsAvailable[session] < group.NumStudents() {
+				if workshop.SpotsAvailable(session) < group.NumStudents() {
 					continue
 				}
 
@@ -219,7 +221,6 @@ func RebalanceWorkshops(minUtilization int, workshops map[string]*Workshop, grou
 				if preference < maxPreference {
 					log.Printf("Rebalancing with group teacher=%s name=%s", group.Teacher, group.Name)
 					oldWorkshop.UnbookSession(session, group)
-					workshop.TakeSession(session, group)
 					group.BookWorkshop(session, workshop)
 					break
 				}

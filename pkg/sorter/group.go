@@ -20,8 +20,8 @@ type Group struct {
 	ArtIDs   []string
 	SciIDs   []string
 
-	workshops []*Workshop
-	id        string
+	schedule *ScheduleState
+	id       string
 }
 
 type ScheduleSummary struct {
@@ -77,7 +77,6 @@ func ReadGroups(file string) ([]*Group, error) {
 			students:            strings.Split(record[4], ","),
 			ArtIDs:              artIDs,
 			SciIDs:              sciIDs,
-			workshops:           make([]*Workshop, 4),
 			ParentIDs:           parentIDs,
 			ParentBookingIssues: make(map[string]string),
 			id:                  fmt.Sprintf("%s-%d-%s", strings.ReplaceAll(teacher, " ", "_"), grade, strings.ReplaceAll(name, " ", "_")),
@@ -87,40 +86,33 @@ func ReadGroups(file string) ([]*Group, error) {
 	return groups, nil
 }
 
-func (g Group) IsEnrolledInWorkshop(id string) bool {
-	for _, workshop := range g.workshops {
-		if workshop == nil {
-			continue
-		}
-		if workshop.id == id {
-			return true
-		}
-	}
-
-	return false
+func (g *Group) IsEnrolledInWorkshop(id string) bool {
+	return g.schedule != nil && g.schedule.IsEnrolledInWorkshop(g, id)
 }
 
-func (g Group) SessionsBooked(kind int) int {
-	booked := 0
-	for _, workshop := range g.workshops {
-		if workshop != nil {
-			workshopKind := idToKind(workshop.id)
-			if workshopKind == kind {
-				booked++
-			}
-		}
+func (g *Group) SessionsBooked(kind int) int {
+	if g.schedule == nil {
+		return 0
 	}
-
-	return booked
+	return g.schedule.SessionsBooked(g, kind)
 }
 
 func (g *Group) BookWorkshop(session int, workshop *Workshop) {
-	g.workshops[session] = workshop
+	if g.schedule == nil {
+		g.schedule = &ScheduleState{}
+	}
+	if workshop.schedule == nil {
+		workshop.schedule = g.schedule
+	}
+	g.schedule.Book(g, workshop, session)
 	delete(g.ParentBookingIssues, workshop.id)
 }
 
 func (g *Group) HowPreferredIsBookedArtWorkshop(sessionNumber int) int {
-	workshop := g.workshops[sessionNumber]
+	workshop := g.GetWorkshop(sessionNumber)
+	if workshop == nil {
+		return 0
+	}
 
 	if idToKind(workshop.id) != ArtWorkshop {
 		return -1
@@ -140,7 +132,10 @@ func (g *Group) HowPreferredIsBookedArtWorkshop(sessionNumber int) int {
 }
 
 func (g *Group) HowPreferredIsBookedSciWorkshop(sessionNumber int) int {
-	workshop := g.workshops[sessionNumber]
+	workshop := g.GetWorkshop(sessionNumber)
+	if workshop == nil {
+		return 0
+	}
 
 	if idToKind(workshop.id) != SciWorkshop {
 		return -1
@@ -162,8 +157,8 @@ func (g *Group) HowPreferredIsBookedSciWorkshop(sessionNumber int) int {
 func (g *Group) GetSatisfaction() int {
 	satisfaction := 0
 
-	for session := range g.workshops {
-		if g.workshops[session] == nil {
+	for session := 0; session < numSessions; session++ {
+		if g.GetWorkshop(session) == nil {
 			return 0
 		}
 		satisfaction += g.SessionSatisfactionPoints(session)
@@ -251,7 +246,8 @@ func (g *Group) HasPreferredWorkshopOfKind(kind int) bool {
 func (g *Group) CountPreferredWorkshopsOfKind(kind int) int {
 	count := 0
 
-	for session, workshop := range g.workshops {
+	for session := 0; session < numSessions; session++ {
+		workshop := g.GetWorkshop(session)
 		if workshop == nil || idToKind(workshop.id) != kind {
 			continue
 		}
@@ -296,11 +292,17 @@ func (g *Group) SortedParentBookingIssues() []string {
 }
 
 func (g *Group) GetWorkshop(session int) *Workshop {
-	return g.workshops[session]
+	if g.schedule == nil {
+		return nil
+	}
+	return g.schedule.WorkshopForGroupSession(g, session)
 }
 
 func (g *Group) HowPreferredIsBookedWorkshop(session int) int {
-	workshop := g.workshops[session]
+	workshop := g.GetWorkshop(session)
+	if workshop == nil {
+		return 0
+	}
 
 	if _, ok := g.ParentIDs[workshop.id]; ok {
 		return 5
@@ -432,7 +434,8 @@ func (g *Group) Print(w io.Writer) {
 	_, _ = fmt.Fprintln(w, "Schedule")
 	_, _ = fmt.Fprintln(w, "| ID | Class | Room | Match |")
 	_, _ = fmt.Fprintln(w, "| -- | ----- | ---- | ----- |")
-	for session, workshop := range g.workshops {
+	for session := 0; session < numSessions; session++ {
+		workshop := g.GetWorkshop(session)
 		if workshop != nil {
 			_, _ = fmt.Fprintf(w, "| %s | %s | %s | %s |\n", workshop.id, workshop.Name, workshop.room, g.SessionSatisfactionLabel(session))
 		} else {
@@ -512,8 +515,8 @@ func (g *Group) PrintHTML(w io.Writer) {
 			_, _ = fmt.Fprintf(w, "<td colspan='4' class='recess'>%s</td>\n", SessionTimes[i])
 		} else {
 			_, _ = fmt.Fprintf(w, "<td>%s</td>\n", SessionTimes[i])
-			if workshopIndex < len(g.workshops) && g.workshops[workshopIndex] != nil {
-				workshop := g.workshops[workshopIndex]
+			if workshopIndex < numSessions && g.GetWorkshop(workshopIndex) != nil {
+				workshop := g.GetWorkshop(workshopIndex)
 				_, _ = fmt.Fprintf(w, "<td>%s</td>\n", workshop.id)
 				_, _ = fmt.Fprintf(w, "<td>%s</td>\n", workshop.Name)
 				_, _ = fmt.Fprintf(w, "<td>%s</td>\n", workshop.room)

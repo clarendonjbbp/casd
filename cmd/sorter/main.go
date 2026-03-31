@@ -6,7 +6,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/clarendonjbbp/casd/pkg/sorter"
+	groupPkg "github.com/clarendonjbbp/casd/pkg/group"
+	"github.com/clarendonjbbp/casd/pkg/scheduler"
+	workshopPkg "github.com/clarendonjbbp/casd/pkg/workshop"
 )
 
 func main() {
@@ -18,12 +20,12 @@ func main() {
 	minUtilization := flag.Int("min-utilization", 30, "Minimum utilization for a workshop session")
 	flag.Parse()
 
-	groups, artWorkshops, sciWorkshops, err := sorter.ReadCSVFiles(*groupsFile, *artWorkshopsFile, *sciWorkshopsFile)
+	groups, artWorkshops, sciWorkshops, err := scheduler.ReadCSVFiles(*groupsFile, *artWorkshopsFile, *sciWorkshopsFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := sorter.Schedule(groups, artWorkshops, sciWorkshops, sorter.ScheduleOptions{
+	if err := scheduler.Schedule(groups, artWorkshops, sciWorkshops, scheduler.ScheduleOptions{
 		Random:                    *random,
 		MinUtilization:            *minUtilization,
 		ContinueOnParentLookupErr: false,
@@ -34,10 +36,10 @@ func main() {
 	if *printOutput {
 		fmt.Printf("# Community Arts and Sciences Day Assignments  \n\n")
 		fmt.Printf("## Groups  \n\n")
-		sorter.PrintGroups(os.Stdout, groups)
+		groupPkg.PrintGroups(os.Stdout, groups)
 		fmt.Printf("## Art Workshops \n\n")
-		sorter.PrintWorkshops(os.Stdout, artWorkshops)
+		workshopPkg.PrintWorkshops(os.Stdout, artWorkshops)
 		fmt.Printf("## Science Workshops  \n\n")
-		sorter.PrintWorkshops(os.Stdout, sciWorkshops)
+		workshopPkg.PrintWorkshops(os.Stdout, sciWorkshops)
 	}
 }

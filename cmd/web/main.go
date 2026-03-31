@@ -11,7 +11,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/clarendonjbbp/casd/pkg/sorter"
+	groupPkg "github.com/clarendonjbbp/casd/pkg/group"
+	"github.com/clarendonjbbp/casd/pkg/scheduler"
+	workshopPkg "github.com/clarendonjbbp/casd/pkg/workshop"
 )
 
 const (
@@ -96,13 +98,13 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf) // Capture log output
 
-	groups, artWorkshops, sciWorkshops, err := sorter.ReadCSVFiles(groupsFile, artFile, scienceFile)
+	groups, artWorkshops, sciWorkshops, err := scheduler.ReadCSVFiles(groupsFile, artFile, scienceFile)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error reading files: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	if err := sorter.Schedule(groups, artWorkshops, sciWorkshops, sorter.ScheduleOptions{
+	if err := scheduler.Schedule(groups, artWorkshops, sciWorkshops, scheduler.ScheduleOptions{
 		Random:                    random,
 		MinUtilization:            minUtilization,
 		ContinueOnParentLookupErr: true,
@@ -122,17 +124,17 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	output.WriteString(`<section class="results-panel is-active" id="results-groups" role="tabpanel" aria-labelledby="tab-groups">
 		<div class="section-content">`)
-	sorter.PrintGroupsHTML(&output, groups)
+	groupPkg.PrintGroupsHTML(&output, groups)
 	output.WriteString(`</div></section>`)
 
 	output.WriteString(`<section class="results-panel" id="results-art" role="tabpanel" aria-labelledby="tab-art" hidden>
 		<div class="section-content">`)
-	sorter.PrintWorkshopsHTML(&output, artWorkshops)
+	workshopPkg.PrintWorkshopsHTML(&output, artWorkshops)
 	output.WriteString(`</div></section>`)
 
 	output.WriteString(`<section class="results-panel" id="results-science" role="tabpanel" aria-labelledby="tab-science" hidden>
 		<div class="section-content">`)
-	sorter.PrintWorkshopsHTML(&output, sciWorkshops)
+	workshopPkg.PrintWorkshopsHTML(&output, sciWorkshops)
 	output.WriteString(`</div></section>`)
 	output.WriteString("</div>")
 

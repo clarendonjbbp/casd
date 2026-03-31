@@ -36,11 +36,10 @@ type Workshop struct {
 	MinGrade        int
 	MaxGrade        int
 	Capacity        int
-	SpotsAvailable  []int
+	OfferedSessions []bool
 	SessionsOffered int
 	room            string
-
-	sessionGroups map[int][]*Group
+	schedule        *ScheduleState
 }
 
 func ReadWorkshops(file string, kind int) (map[string]*Workshop, error) {
@@ -84,14 +83,12 @@ func ReadWorkshops(file string, kind int) (map[string]*Workshop, error) {
 			return nil, err
 		}
 
-		sessionCapacities := make([]int, numSessions)
+		offeredSessions := make([]bool, numSessions)
 		var sessionsOffered int
 		for i := 2; i < 6; i++ {
 			if strings.ToLower(record[i]) == "y" {
-				sessionCapacities[i-2] = capacity
+				offeredSessions[i-2] = true
 				sessionsOffered++
-			} else {
-				sessionCapacities[i-2] = -1
 			}
 		}
 
@@ -103,10 +100,9 @@ func ReadWorkshops(file string, kind int) (map[string]*Workshop, error) {
 			MinGrade:        minGrade,
 			MaxGrade:        maxGrade,
 			Capacity:        capacity,
-			SpotsAvailable:  sessionCapacities,
+			OfferedSessions: offeredSessions,
 			SessionsOffered: sessionsOffered,
 			room:            record[7],
-			sessionGroups:   make(map[int][]*Group),
 		}
 	}
 
@@ -114,81 +110,73 @@ func ReadWorkshops(file string, kind int) (map[string]*Workshop, error) {
 }
 
 func (w Workshop) GetAvailableSessions(group *Group) []int {
-	var availableSessions []int
-	maxRemainingSlots := 0
-	for i, sessionCapacity := range w.SpotsAvailable {
-		if group.workshops[i] == nil && sessionCapacity != -1 {
-			remainingSlots := sessionCapacity - group.NumStudents()
-			if remainingSlots > maxRemainingSlots {
-				maxRemainingSlots = remainingSlots
-				availableSessions = []int{i}
-			} else if remainingSlots == maxRemainingSlots {
-				availableSessions = append(availableSessions, i)
-			}
-		}
+	if w.schedule == nil {
+		return nil
 	}
-
-	return availableSessions
+	return w.schedule.AvailableSessions(&w, group)
 }
 
 func (w Workshop) WithinGradeRange(grade int) bool {
 	return w.MinGrade <= grade && grade <= w.MaxGrade
 }
 
-func (w *Workshop) TakeSession(session int, group *Group) {
-	w.SpotsAvailable[session] -= len(group.students)
+func (w Workshop) IsSessionOffered(session int) bool {
+	return session >= 0 && session < len(w.OfferedSessions) && w.OfferedSessions[session]
+}
 
-	groups := w.sessionGroups[session]
-	groups = append(groups, group)
-	w.sessionGroups[session] = groups
+func (w *Workshop) TakeSession(session int, group *Group) {
+	if w.schedule == nil {
+		w.schedule = &ScheduleState{}
+	}
+	if group.schedule == nil {
+		group.schedule = w.schedule
+	}
+	w.schedule.Book(group, w, session)
 }
 
 func (w *Workshop) UnbookSession(session int, group *Group) {
-	w.SpotsAvailable[session] += len(group.students)
-
-	groups := w.sessionGroups[session]
-	for i := range groups {
-		if groups[i].id == group.id {
-			log.Println("Found group to remove")
-			groups = remove(groups, i)
-			break
-		}
+	if w.schedule == nil {
+		return
 	}
-
-	w.sessionGroups[session] = groups
+	if groups := w.schedule.GroupsForWorkshopSession(w, session); len(groups) > 0 {
+		log.Println("Found group to remove")
+	}
+	w.schedule.Unbook(group, w, session)
 }
 
 func (w Workshop) GetGroupsForSession(session int) []*Group {
-	return w.sessionGroups[session]
+	if w.schedule == nil {
+		return nil
+	}
+	return w.schedule.GroupsForWorkshopSession(&w, session)
+}
+
+func (w Workshop) SpotsAvailable(sessionNumber int) int {
+	if w.schedule == nil {
+		return -1
+	}
+	return w.schedule.SpotsAvailable(&w, sessionNumber)
 }
 
 func (w Workshop) Utilization(sessionNumber int) int {
-	if w.SpotsAvailable[sessionNumber] == -1 {
+	if w.schedule == nil {
 		return -1
 	}
-
-	return percentOf(w.Capacity-w.SpotsAvailable[sessionNumber], w.Capacity)
+	return w.schedule.Utilization(&w, sessionNumber)
 }
 
 func (w Workshop) UtilizationWithoutGroup(sessionNumber int, group *Group) int {
-	if w.SpotsAvailable[sessionNumber] == -1 {
+	if w.schedule == nil {
 		return -1
 	}
-
-	return percentOf(w.Capacity-(w.SpotsAvailable[sessionNumber]+group.NumStudents()), w.Capacity)
+	return w.schedule.UtilizationWithoutGroup(&w, sessionNumber, group)
 }
 
 func (w Workshop) OverallUtilization() int {
-	overallSpotsTaken := 0
-	overallCapacity := 0
-	for _, spotsAvailable := range w.SpotsAvailable {
-		if spotsAvailable != -1 {
-			overallCapacity += w.Capacity
-			overallSpotsTaken += w.Capacity - spotsAvailable
-		}
+	if w.schedule == nil {
+		return 0
 	}
-
-	return percentOf(overallSpotsTaken, overallCapacity)
+	return w.schedule.OverallUtilization(&w)
 }
 
 func (w Workshop) GetID() string {
@@ -204,13 +192,13 @@ func (w Workshop) Print(wr io.Writer) {
 	_, _ = fmt.Fprintln(wr, "| Utilization | Students |")
 	_, _ = fmt.Fprintln(wr, "| --------- | -------- |")
 	for i := 0; i < numSessions; i++ {
-		if w.SpotsAvailable[i] == -1 {
+		if !w.IsSessionOffered(i) {
 			_, _ = fmt.Fprintln(wr, "| - | - |")
 
 		} else {
 			_, _ = fmt.Fprintf(wr, "| %d%% | ", w.Utilization(i))
 
-			groups := w.sessionGroups[i]
+			groups := w.GetGroupsForSession(i)
 			for _, group := range groups {
 				_, _ = fmt.Fprintf(wr, "%v,", strings.Join(group.students, ","))
 			}
@@ -238,7 +226,7 @@ func GetUnderutilizedSessions(minUtilization int, workshops map[string]*Workshop
 	var underutilizedWorkshopSessions []int
 	for _, workshop := range workshops {
 		for i := 0; i < numSessions; i++ {
-			if workshop.SpotsAvailable[i] == -1 {
+			if !workshop.IsSessionOffered(i) {
 				continue
 			}
 			if workshop.Utilization(i) < minUtilization {
@@ -299,10 +287,6 @@ func idToKind(id string) int {
 	return SciWorkshop
 }
 
-func remove(slice []*Group, s int) []*Group {
-	return append(slice[:s], slice[s+1:]...)
-}
-
 func percentOf(part, total int) int {
 	if total == 0 {
 		return 0
@@ -329,7 +313,7 @@ func (w Workshop) PrintHTML(wr io.Writer) {
 		} else {
 			_, _ = fmt.Fprintf(wr, "<td>%s</td>\n", SessionTimes[i])
 
-			if workshopIndex < numSessions && w.SpotsAvailable[workshopIndex] != -1 {
+			if workshopIndex < numSessions && w.IsSessionOffered(workshopIndex) {
 				utilization := w.Utilization(workshopIndex)
 				utilizationClass := "normal"
 				if utilization < 30 {
@@ -341,7 +325,7 @@ func (w Workshop) PrintHTML(wr io.Writer) {
 				_, _ = fmt.Fprintf(wr, "<td class='utilization %s'>%d%%</td>\n", utilizationClass, utilization)
 				_, _ = fmt.Fprintf(wr, "<td class='students'>")
 
-				groups := w.sessionGroups[workshopIndex]
+				groups := w.GetGroupsForSession(workshopIndex)
 				var studentNames []string
 				for _, group := range groups {
 					studentNames = append(studentNames, group.students...)

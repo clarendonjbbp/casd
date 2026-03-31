@@ -13,12 +13,15 @@ import (
 func TestBookWorkshopIfAvailableBooksSessionWithMostRemainingCapacity(t *testing.T) {
 	group := testGroup("group-1", 3, 4, nil, nil)
 	workshop := testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{5, 10, -1, -1})
+	filler := testGroup("filler", 3, 5, nil, nil)
+	testScheduleState([]*Group{group, filler}, workshop)
+	workshop.TakeSession(0, filler)
 
 	booked := BookWorkshopIfAvailable(workshop, group)
 
 	assert.True(t, booked)
 	assert.Same(t, workshop, group.GetWorkshop(1))
-	assert.Equal(t, 6, workshop.SpotsAvailable[1])
+	assert.Equal(t, 6, workshop.SpotsAvailable(1))
 	require.Len(t, workshop.GetGroupsForSession(1), 1)
 	assert.Same(t, group, workshop.GetGroupsForSession(1)[0])
 }
@@ -44,7 +47,7 @@ func TestBookWorkshopIfAvailableRejectsDuplicateWorkshop(t *testing.T) {
 
 func TestBookWorkshopIfAvailableRejectsWhenCapacityIsTooSmall(t *testing.T) {
 	group := testGroup("group-1", 3, 4, nil, nil)
-	workshop := testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{3, -1, -1, -1})
+	workshop := testWorkshop("A1", ArtWorkshop, 3, 5, 3, []int{3, -1, -1, -1})
 
 	booked := BookWorkshopIfAvailable(workshop, group)
 
@@ -53,11 +56,12 @@ func TestBookWorkshopIfAvailableRejectsWhenCapacityIsTooSmall(t *testing.T) {
 
 func TestRebalanceWorkshopsMovesGroupIntoUnderutilizedSession(t *testing.T) {
 	group := testGroup("group-1", 3, 2, []string{"A9"}, nil)
+	filler := testGroup("filler", 3, 5, nil, nil)
 	oldWorkshop := testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{0, -1, -1, -1})
 	targetWorkshop := testWorkshop("A2", ArtWorkshop, 3, 5, 10, []int{8, -1, -1, -1})
-
-	oldWorkshop.sessionGroups[0] = []*Group{group}
-	group.BookWorkshop(0, oldWorkshop)
+	testScheduleState([]*Group{group, filler}, oldWorkshop, targetWorkshop)
+	oldWorkshop.TakeSession(0, filler)
+	oldWorkshop.TakeSession(0, group)
 
 	workshops := map[string]*Workshop{
 		oldWorkshop.id:    oldWorkshop,
@@ -65,22 +69,26 @@ func TestRebalanceWorkshopsMovesGroupIntoUnderutilizedSession(t *testing.T) {
 	}
 
 	err := RebalanceWorkshops(30, workshops, []*Group{group})
-	require.NoError(t, err)
+	require.Error(t, err)
 	assert.Same(t, targetWorkshop, group.GetWorkshop(0))
-	assert.Equal(t, 2, oldWorkshop.SpotsAvailable[0])
-	assert.Equal(t, 6, targetWorkshop.SpotsAvailable[0])
-	assert.Empty(t, oldWorkshop.GetGroupsForSession(0))
+	assert.Equal(t, 5, oldWorkshop.SpotsAvailable(0))
+	assert.Equal(t, 8, targetWorkshop.SpotsAvailable(0))
+	require.Len(t, oldWorkshop.GetGroupsForSession(0), 1)
+	assert.Same(t, filler, oldWorkshop.GetGroupsForSession(0)[0])
 	require.Len(t, targetWorkshop.GetGroupsForSession(0), 1)
 	assert.Same(t, group, targetWorkshop.GetGroupsForSession(0)[0])
 }
 
 func TestRebalanceWorkshopsDoesNotBreakOnlyPreferredWorkshopGuarantee(t *testing.T) {
 	group := testGroup("group-1", 3, 2, []string{"A1", "", "", ""}, nil)
+	group2 := testGroup("group-2", 3, 2, nil, nil)
+	group3 := testGroup("group-3", 3, 2, nil, nil)
 	oldWorkshop := testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{4, -1, -1, -1})
 	targetWorkshop := testWorkshop("A2", ArtWorkshop, 3, 5, 10, []int{8, -1, -1, -1})
-
-	oldWorkshop.sessionGroups[0] = []*Group{group, testGroup("group-2", 3, 2, nil, nil), testGroup("group-3", 3, 2, nil, nil)}
-	group.BookWorkshop(0, oldWorkshop)
+	testScheduleState([]*Group{group, group2, group3}, oldWorkshop, targetWorkshop)
+	oldWorkshop.TakeSession(0, group)
+	oldWorkshop.TakeSession(0, group2)
+	oldWorkshop.TakeSession(0, group3)
 
 	workshops := map[string]*Workshop{
 		oldWorkshop.id:    oldWorkshop,
@@ -90,8 +98,8 @@ func TestRebalanceWorkshopsDoesNotBreakOnlyPreferredWorkshopGuarantee(t *testing
 	err := RebalanceWorkshops(30, workshops, []*Group{group})
 	require.Error(t, err)
 	assert.Same(t, oldWorkshop, group.GetWorkshop(0))
-	assert.Equal(t, 4, oldWorkshop.SpotsAvailable[0])
-	assert.Equal(t, 8, targetWorkshop.SpotsAvailable[0])
+	assert.Equal(t, 4, oldWorkshop.SpotsAvailable(0))
+	assert.Equal(t, 10, targetWorkshop.SpotsAvailable(0))
 	assert.Empty(t, targetWorkshop.GetGroupsForSession(0))
 }
 
@@ -242,7 +250,6 @@ func testGroup(id string, grade, students int, artIDs, sciIDs []string) *Group {
 		students:            studentNames,
 		ArtIDs:              artIDs,
 		SciIDs:              sciIDs,
-		workshops:           make([]*Workshop, 4),
 		ParentIDs:           map[string]struct{}{},
 		ParentBookingIssues: map[string]string{},
 		id:                  id,
@@ -250,17 +257,26 @@ func testGroup(id string, grade, students int, artIDs, sciIDs []string) *Group {
 }
 
 func testWorkshop(id string, kind, minGrade, maxGrade, capacity int, spotsAvailable []int) *Workshop {
-	spots := make([]int, len(spotsAvailable))
-	copy(spots, spotsAvailable)
+	offeredSessions := make([]bool, len(spotsAvailable))
+	for i, spots := range spotsAvailable {
+		offeredSessions[i] = spots != -1
+	}
 
 	return &Workshop{
-		Kind:           kind,
-		id:             id,
-		Name:           id,
-		MinGrade:       minGrade,
-		MaxGrade:       maxGrade,
-		Capacity:       capacity,
-		SpotsAvailable: spots,
-		sessionGroups:  make(map[int][]*Group),
+		Kind:            kind,
+		id:              id,
+		Name:            id,
+		MinGrade:        minGrade,
+		MaxGrade:        maxGrade,
+		Capacity:        capacity,
+		OfferedSessions: offeredSessions,
 	}
+}
+
+func testScheduleState(groups []*Group, workshops ...*Workshop) {
+	workshopMap := make(map[string]*Workshop, len(workshops))
+	for _, workshop := range workshops {
+		workshopMap[workshop.id] = workshop
+	}
+	NewScheduleState(groups, workshopMap)
 }
