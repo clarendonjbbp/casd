@@ -7,26 +7,30 @@ import (
 )
 
 func BookWorkshopIfAvailable(workshop *Workshop, group *Group) bool {
-	if !workshop.WithinGradeRange(group.Grade) {
-		//log.Printf("Mismatched grade id=%s teacher=%s group=%s\n", workshop.id, group.Teacher, group.Name)
+	if reason := BookingFailureReason(workshop, group); reason != "" {
 		return false
+	}
+
+	sessions := workshop.GetAvailableSessions(group)
+	randSession := sessions[rand.Intn(len(sessions))]
+	workshop.TakeSession(randSession, group)
+	group.BookWorkshop(randSession, workshop)
+
+	return true
+}
+
+func BookingFailureReason(workshop *Workshop, group *Group) string {
+	if !workshop.WithinGradeRange(group.Grade) {
+		return "grade mismatch"
 	}
 	if group.IsEnrolledInWorkshop(workshop.id) {
-		//log.Printf("Duplicate workshop id=%s teacher=%s group=%s\n", workshop.id, group.Teacher, group.Name)
-		return false
+		return "duplicate workshop"
 	}
-	sessions := workshop.GetAvailableSessions(group)
-	if len(sessions) > 0 {
-		randSession := sessions[rand.Intn(len(sessions))]
-		workshop.TakeSession(randSession, group)
-		group.BookWorkshop(randSession, workshop)
-
-		return true
+	if len(workshop.GetAvailableSessions(group)) == 0 {
+		return "no available session with enough capacity"
 	}
 
-	//log.Printf("Unable to book session, its full. workshop id=%s teacher=%s group=%s\n", workshop.id, group.Teacher, group.Name)
-
-	return false
+	return ""
 }
 
 func GetWorkshopFromID(id string, artWorkshops, sciWorkshops map[string]*Workshop) (*Workshop, error) {

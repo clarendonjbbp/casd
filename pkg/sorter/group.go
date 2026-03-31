@@ -10,9 +10,10 @@ import (
 )
 
 type Group struct {
-	ParentIDs map[string]struct{}
-	Teacher   string
-	Name      string
+	ParentIDs           map[string]struct{}
+	ParentBookingIssues map[string]string
+	Teacher             string
+	Name                string
 
 	Grade    int
 	students []string
@@ -70,15 +71,16 @@ func ReadGroups(file string) ([]*Group, error) {
 		}
 
 		groups = append(groups, &Group{
-			Teacher:   teacher,
-			Grade:     grade,
-			Name:      name,
-			students:  strings.Split(record[4], ","),
-			ArtIDs:    artIDs,
-			SciIDs:    sciIDs,
-			workshops: make([]*Workshop, 4),
-			ParentIDs: parentIDs,
-			id:        fmt.Sprintf("%s-%d-%s", strings.ReplaceAll(teacher, " ", "_"), grade, strings.ReplaceAll(name, " ", "_")),
+			Teacher:             teacher,
+			Grade:               grade,
+			Name:                name,
+			students:            strings.Split(record[4], ","),
+			ArtIDs:              artIDs,
+			SciIDs:              sciIDs,
+			workshops:           make([]*Workshop, 4),
+			ParentIDs:           parentIDs,
+			ParentBookingIssues: make(map[string]string),
+			id:                  fmt.Sprintf("%s-%d-%s", strings.ReplaceAll(teacher, " ", "_"), grade, strings.ReplaceAll(name, " ", "_")),
 		})
 	}
 
@@ -114,6 +116,7 @@ func (g Group) SessionsBooked(kind int) int {
 
 func (g *Group) BookWorkshop(session int, workshop *Workshop) {
 	g.workshops[session] = workshop
+	delete(g.ParentBookingIssues, workshop.id)
 }
 
 func (g *Group) HowPreferredIsBookedArtWorkshop(sessionNumber int) int {
@@ -256,6 +259,25 @@ func (g *Group) HasPreferredWorkshopOfKind(kind int) bool {
 	return false
 }
 
+func (g *Group) SortedParentBookingIssues() []string {
+	if len(g.ParentBookingIssues) == 0 {
+		return nil
+	}
+
+	parentIDs := make([]string, 0, len(g.ParentBookingIssues))
+	for parentID := range g.ParentBookingIssues {
+		parentIDs = append(parentIDs, parentID)
+	}
+	sort.Strings(parentIDs)
+
+	issues := make([]string, 0, len(parentIDs))
+	for _, parentID := range parentIDs {
+		issues = append(issues, fmt.Sprintf("%s (%s)", parentID, g.ParentBookingIssues[parentID]))
+	}
+
+	return issues
+}
+
 func (g *Group) GetWorkshop(session int) *Workshop {
 	return g.workshops[session]
 }
@@ -384,7 +406,11 @@ func (g *Group) Print(w io.Writer) {
 		for parentID := range g.ParentIDs {
 			parentIDs = append(parentIDs, parentID)
 		}
+		sort.Strings(parentIDs)
 		_, _ = fmt.Fprintf(w, "Group contains child of presenter or assistant of workshop = %v  \n", strings.Join(parentIDs, ","))
+	}
+	if issues := g.SortedParentBookingIssues(); len(issues) > 0 {
+		_, _ = fmt.Fprintf(w, "Unbooked parent workshops = %s  \n", strings.Join(issues, ", "))
 	}
 	_, _ = fmt.Fprintln(w, "Schedule")
 	_, _ = fmt.Fprintln(w, "| ID | Class | Room | Match |")
@@ -452,6 +478,9 @@ func (g *Group) PrintHTML(w io.Writer) {
 		}
 		sort.Strings(parentIDs)
 		_, _ = fmt.Fprintf(w, "<p><strong>Parent Workshops:</strong> %s</p>\n", strings.Join(parentIDs, ", "))
+	}
+	if issues := g.SortedParentBookingIssues(); len(issues) > 0 {
+		_, _ = fmt.Fprintf(w, "<p><strong>Unbooked Parent Workshops:</strong> %s</p>\n", strings.Join(issues, ", "))
 	}
 	_, _ = fmt.Fprintf(w, "</div>\n")
 

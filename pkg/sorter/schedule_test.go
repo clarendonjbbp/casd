@@ -172,6 +172,21 @@ func TestCalculateScheduleSummary(t *testing.T) {
 	assert.Equal(t, 2, summary.TotalGroups)
 }
 
+func TestBookParentClassesRecordsGradeMismatchIssue(t *testing.T) {
+	group := testGroup("group-1", 2, 4, []string{"A1", "A2", "A3", "A4"}, []string{"S1", "S2", "S3", "S4"})
+	group.ParentIDs["S24"] = struct{}{}
+
+	artWorkshops := map[string]*Workshop{}
+	sciWorkshops := map[string]*Workshop{
+		"S24": testWorkshop("S24", SciWorkshop, 3, 5, 10, []int{10, 10, 10, 10}),
+	}
+
+	err := bookParentClasses([]*Group{group}, artWorkshops, sciWorkshops, true)
+	require.NoError(t, err)
+	assert.Equal(t, "grade mismatch", group.ParentBookingIssues["S24"])
+	assert.Zero(t, group.SessionsBooked(SciWorkshop))
+}
+
 func testGroup(id string, grade, students int, artIDs, sciIDs []string) *Group {
 	studentNames := make([]string, students)
 	for i := range studentNames {
@@ -179,15 +194,16 @@ func testGroup(id string, grade, students int, artIDs, sciIDs []string) *Group {
 	}
 
 	return &Group{
-		Teacher:   "Teacher",
-		Name:      "Group",
-		Grade:     grade,
-		students:  studentNames,
-		ArtIDs:    artIDs,
-		SciIDs:    sciIDs,
-		workshops: make([]*Workshop, 4),
-		ParentIDs: map[string]struct{}{},
-		id:        id,
+		Teacher:             "Teacher",
+		Name:                "Group",
+		Grade:               grade,
+		students:            studentNames,
+		ArtIDs:              artIDs,
+		SciIDs:              sciIDs,
+		workshops:           make([]*Workshop, 4),
+		ParentIDs:           map[string]struct{}{},
+		ParentBookingIssues: map[string]string{},
+		id:                  id,
 	}
 }
 
