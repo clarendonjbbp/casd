@@ -74,6 +74,27 @@ func TestRebalanceWorkshopsMovesGroupIntoUnderutilizedSession(t *testing.T) {
 	assert.Same(t, group, targetWorkshop.GetGroupsForSession(0)[0])
 }
 
+func TestRebalanceWorkshopsDoesNotBreakOnlyPreferredWorkshopGuarantee(t *testing.T) {
+	group := testGroup("group-1", 3, 2, []string{"A1", "", "", ""}, nil)
+	oldWorkshop := testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{4, -1, -1, -1})
+	targetWorkshop := testWorkshop("A2", ArtWorkshop, 3, 5, 10, []int{8, -1, -1, -1})
+
+	oldWorkshop.sessionGroups[0] = []*Group{group, testGroup("group-2", 3, 2, nil, nil), testGroup("group-3", 3, 2, nil, nil)}
+	group.BookWorkshop(0, oldWorkshop)
+
+	workshops := map[string]*Workshop{
+		oldWorkshop.id:    oldWorkshop,
+		targetWorkshop.id: targetWorkshop,
+	}
+
+	err := RebalanceWorkshops(30, workshops, []*Group{group})
+	require.Error(t, err)
+	assert.Same(t, oldWorkshop, group.GetWorkshop(0))
+	assert.Equal(t, 4, oldWorkshop.SpotsAvailable[0])
+	assert.Equal(t, 8, targetWorkshop.SpotsAvailable[0])
+	assert.Empty(t, targetWorkshop.GetGroupsForSession(0))
+}
+
 func TestReadCSVFilesLoadsRepositoryFixtures(t *testing.T) {
 	root := filepath.Join("..", "..")
 
@@ -185,6 +206,27 @@ func TestBookParentClassesRecordsGradeMismatchIssue(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "grade mismatch", group.ParentBookingIssues["S24"])
 	assert.Zero(t, group.SessionsBooked(SciWorkshop))
+}
+
+func TestBookGuaranteedPreferredWorkshopBooksOnePreferredWorkshopPerKind(t *testing.T) {
+	group := testGroup("group-1", 3, 4, []string{"A1", "A2", "A3", "A4"}, []string{"S1", "S2", "S3", "S4"})
+
+	artWorkshops := map[string]*Workshop{
+		"A1": testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{10, 10, -1, -1}),
+		"A2": testWorkshop("A2", ArtWorkshop, 3, 5, 10, []int{10, 10, -1, -1}),
+	}
+	sciWorkshops := map[string]*Workshop{
+		"S1": testWorkshop("S1", SciWorkshop, 3, 5, 10, []int{-1, -1, 10, 10}),
+		"S2": testWorkshop("S2", SciWorkshop, 3, 5, 10, []int{-1, -1, 10, 10}),
+	}
+
+	bookGuaranteedPreferredWorkshop([]*Group{group}, artWorkshops, ArtWorkshop)
+	bookGuaranteedPreferredWorkshop([]*Group{group}, sciWorkshops, SciWorkshop)
+
+	assert.Equal(t, 1, group.SessionsBooked(ArtWorkshop))
+	assert.Equal(t, 1, group.SessionsBooked(SciWorkshop))
+	assert.True(t, group.HasPreferredWorkshopOfKind(ArtWorkshop))
+	assert.True(t, group.HasPreferredWorkshopOfKind(SciWorkshop))
 }
 
 func testGroup(id string, grade, students int, artIDs, sciIDs []string) *Group {

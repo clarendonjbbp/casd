@@ -245,6 +245,12 @@ func (g *Group) SessionSatisfactionLabel(session int) string {
 }
 
 func (g *Group) HasPreferredWorkshopOfKind(kind int) bool {
+	return g.CountPreferredWorkshopsOfKind(kind) > 0
+}
+
+func (g *Group) CountPreferredWorkshopsOfKind(kind int) int {
+	count := 0
+
 	for session, workshop := range g.workshops {
 		if workshop == nil || idToKind(workshop.id) != kind {
 			continue
@@ -252,11 +258,22 @@ func (g *Group) HasPreferredWorkshopOfKind(kind int) bool {
 
 		preferenceRank := g.HowPreferredIsBookedWorkshop(session)
 		if preferenceRank >= 1 && preferenceRank <= 4 {
-			return true
+			count++
 		}
 	}
 
-	return false
+	return count
+}
+
+func (g *Group) PreferenceRankForWorkshopID(id string) int {
+	preferences := g.preferencesForKind(idToKind(id))
+	for i := range preferences {
+		if preferences[i] == id {
+			return i + 1
+		}
+	}
+
+	return 0
 }
 
 func (g *Group) SortedParentBookingIssues() []string {
