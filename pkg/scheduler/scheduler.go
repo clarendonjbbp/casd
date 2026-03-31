@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sort"
 	"time"
 
 	"github.com/clarendonjbbp/casd/pkg/booking"
@@ -40,6 +41,7 @@ func ReadCSVFiles(groupsFile, artWorkshopsFile, sciWorkshopsFile string) ([]*gro
 
 func Schedule(groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*workshopPkg.Workshop, opts ScheduleOptions) (*booking.ScheduleState, error) {
 	state := booking.NewScheduleState(groups, artWorkshops, sciWorkshops)
+	state.SetRandomSelection(opts.Random)
 
 	log.Printf("====Booking Parent Classes===\n")
 	if err := bookParentClasses(state, groups, artWorkshops, sciWorkshops, opts.ContinueOnParentLookupErr); err != nil {
@@ -75,7 +77,13 @@ func Schedule(groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*w
 
 func bookParentClasses(state *booking.ScheduleState, groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*workshopPkg.Workshop, continueOnLookupErr bool) error {
 	for _, group := range groups {
+		parentIDs := make([]string, 0, len(group.ParentIDs))
 		for parentID := range group.ParentIDs {
+			parentIDs = append(parentIDs, parentID)
+		}
+		sort.Strings(parentIDs)
+
+		for _, parentID := range parentIDs {
 			workshop, err := getWorkshopFromID(parentID, artWorkshops, sciWorkshops)
 			if err != nil {
 				group.ParentBookingIssues[parentID] = "workshop not found"

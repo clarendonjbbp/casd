@@ -27,6 +27,7 @@ type ScheduleState struct {
 	bookingsByGroup        map[string][]*Booking
 	bookingsByGroupSession map[groupSessionKey]*Booking
 	bookingsByWorkshopSess map[workshopSessionKey][]*Booking
+	randomSelection        bool
 }
 
 type groupSessionKey struct {
@@ -53,6 +54,10 @@ func NewScheduleState(_ []*groupPkg.Group, _ ...map[string]*workshopPkg.Workshop
 		bookingsByGroupSession: make(map[groupSessionKey]*Booking),
 		bookingsByWorkshopSess: make(map[workshopSessionKey][]*Booking),
 	}
+}
+
+func (s *ScheduleState) SetRandomSelection(enabled bool) {
+	s.randomSelection = enabled
 }
 
 func (s *ScheduleState) Book(group *groupPkg.Group, workshop *workshopPkg.Workshop, session int) {
@@ -223,8 +228,11 @@ func BookWorkshopIfAvailable(state *ScheduleState, workshop *workshopPkg.Worksho
 	}
 
 	sessions := state.AvailableSessions(workshop, group)
-	randSession := sessions[rand.Intn(len(sessions))]
-	state.Book(group, workshop, randSession)
+	sessionIndex := 0
+	if state.randomSelection {
+		sessionIndex = rand.Intn(len(sessions))
+	}
+	state.Book(group, workshop, sessions[sessionIndex])
 
 	return true
 }
@@ -246,7 +254,14 @@ func BookingFailureReason(state *ScheduleState, workshop *workshopPkg.Workshop, 
 func GetUnderutilizedSessions(state *ScheduleState, minUtilization int, workshops map[string]*workshopPkg.Workshop) ([]*workshopPkg.Workshop, []int) {
 	var underutilizedWorkshops []*workshopPkg.Workshop
 	var underutilizedWorkshopSessions []int
-	for _, workshop := range workshops {
+	workshopIDs := make([]string, 0, len(workshops))
+	for id := range workshops {
+		workshopIDs = append(workshopIDs, id)
+	}
+	sort.Strings(workshopIDs)
+
+	for _, id := range workshopIDs {
+		workshop := workshops[id]
 		for i := 0; i < model.NumSessions; i++ {
 			if !workshop.IsSessionOffered(i) {
 				continue

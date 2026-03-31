@@ -57,6 +57,19 @@ func TestBookWorkshopIfAvailableRejectsWhenCapacityIsTooSmall(t *testing.T) {
 	assert.False(t, booked)
 }
 
+func TestBookWorkshopIfAvailableUsesDeterministicFirstSessionWhenRandomDisabled(t *testing.T) {
+	group := testGroup("group-1", 3, 4, nil, nil)
+	workshop := testWorkshop("A1", model.ArtWorkshop, 3, 5, 10, []int{10, 10, -1, -1})
+	state := testScheduleState([]*groupPkg.Group{group}, workshop)
+	state.SetRandomSelection(false)
+
+	booked := BookWorkshopIfAvailable(state, workshop, group)
+
+	assert.True(t, booked)
+	assert.Same(t, workshop, state.WorkshopForGroupSession(group, 0))
+	assert.Nil(t, state.WorkshopForGroupSession(group, 1))
+}
+
 func TestGroupSatisfactionCalculatesPointsAndPercent(t *testing.T) {
 	group := testGroup("group-1", 3, 4, []string{"A1", "A2", "A3", "A4"}, []string{"S1", "S2", "S3", "S4"})
 	group.ParentIDs["S99"] = struct{}{}
