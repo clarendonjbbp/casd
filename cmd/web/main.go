@@ -114,23 +114,26 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	// Generate output
 	var output bytes.Buffer
 	output.WriteString(`<div class="results">`)
-	output.WriteString(`<details open>
-		<summary><h2>Groups</h2></summary>
+	output.WriteString(`<div class="results-tabs" role="tablist" aria-label="Schedule views">
+		<button class="results-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="results-groups" id="tab-groups" data-tab-target="results-groups">Groups</button>
+		<button class="results-tab" type="button" role="tab" aria-selected="false" aria-controls="results-art" id="tab-art" data-tab-target="results-art">Art Workshops</button>
+		<button class="results-tab" type="button" role="tab" aria-selected="false" aria-controls="results-science" id="tab-science" data-tab-target="results-science">Science Workshops</button>
+	</div>`)
+
+	output.WriteString(`<section class="results-panel is-active" id="results-groups" role="tabpanel" aria-labelledby="tab-groups">
 		<div class="section-content">`)
 	sorter.PrintGroupsHTML(&output, groups)
-	output.WriteString(`</div></details>`)
+	output.WriteString(`</div></section>`)
 
-	output.WriteString(`<details open>
-		<summary><h2>Art Workshops</h2></summary>
+	output.WriteString(`<section class="results-panel" id="results-art" role="tabpanel" aria-labelledby="tab-art" hidden>
 		<div class="section-content">`)
 	sorter.PrintWorkshopsHTML(&output, artWorkshops)
-	output.WriteString(`</div></details>`)
+	output.WriteString(`</div></section>`)
 
-	output.WriteString(`<details open>
-		<summary><h2>Science Workshops</h2></summary>
+	output.WriteString(`<section class="results-panel" id="results-science" role="tabpanel" aria-labelledby="tab-science" hidden>
 		<div class="section-content">`)
 	sorter.PrintWorkshopsHTML(&output, sciWorkshops)
-	output.WriteString(`</div></details>`)
+	output.WriteString(`</div></section>`)
 	output.WriteString("</div>")
 
 	renderTemplate(w, "results.html", resultsPageData{
