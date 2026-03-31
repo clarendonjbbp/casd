@@ -48,6 +48,12 @@ func Schedule(groups []*Group, artWorkshops, sciWorkshops map[string]*Workshop, 
 		shuffleGroups(groups)
 	}
 
+	log.Printf("\n====Guaranteeing Preferred Art Classes===\n")
+	bookGuaranteedPreferredWorkshop(groups, artWorkshops, ArtWorkshop)
+
+	log.Printf("\n====Guaranteeing Preferred Science Classes===\n")
+	bookGuaranteedPreferredWorkshop(groups, sciWorkshops, SciWorkshop)
+
 	log.Printf("\n====Booking Art Classes===\n")
 	bookWorkshopKind(groups, artWorkshops, sciWorkshops, ArtWorkshop)
 
@@ -63,6 +69,28 @@ func Schedule(groups []*Group, artWorkshops, sciWorkshops map[string]*Workshop, 
 	}
 
 	return nil
+}
+
+func bookGuaranteedPreferredWorkshop(groups []*Group, workshops map[string]*Workshop, kind int) {
+	for _, group := range groups {
+		if group.SessionsBooked(kind) >= 1 {
+			continue
+		}
+
+		for _, id := range preferencesForKind(group, kind) {
+			workshop, ok := workshops[id]
+			if !ok {
+				if id != "" {
+					log.Printf("%s workshop ID %s not found for teacher=%s group=%s during guarantee phase", kindLabel(kind), id, group.Teacher, group.Name)
+				}
+				continue
+			}
+
+			if BookWorkshopIfAvailable(workshop, group) {
+				break
+			}
+		}
+	}
 }
 
 func bookParentClasses(groups []*Group, artWorkshops, sciWorkshops map[string]*Workshop, continueOnLookupErr bool) error {
@@ -183,6 +211,9 @@ func RebalanceWorkshops(minUtilization int, workshops map[string]*Workshop, grou
 				if oldWorkshop.UtilizationWithoutGroup(session, group) < minUtilization {
 					continue
 				}
+				if wouldBreakPreferredGuarantee(group, oldWorkshop, workshop) {
+					continue
+				}
 
 				preference := group.HowPreferredIsBookedWorkshop(session)
 				if preference < maxPreference {
@@ -197,6 +228,22 @@ func RebalanceWorkshops(minUtilization int, workshops map[string]*Workshop, grou
 	}
 
 	return errors.New("unable to rebalance workshop")
+}
+
+func wouldBreakPreferredGuarantee(group *Group, oldWorkshop, newWorkshop *Workshop) bool {
+	kind := oldWorkshop.Kind
+	currentPreferredCount := group.CountPreferredWorkshopsOfKind(kind)
+	if currentPreferredCount > 1 {
+		return false
+	}
+
+	oldRank := group.PreferenceRankForWorkshopID(oldWorkshop.GetID())
+	if oldRank < 1 || oldRank > 4 {
+		return false
+	}
+
+	newRank := group.PreferenceRankForWorkshopID(newWorkshop.GetID())
+	return newRank < 1 || newRank > 4
 }
 
 func shuffleGroups(groups []*Group) {
