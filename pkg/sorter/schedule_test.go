@@ -1,6 +1,7 @@
 package sorter
 
 import (
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"
@@ -93,6 +94,60 @@ func TestReadCSVFilesLoadsRepositoryFixtures(t *testing.T) {
 	assert.True(t, ok)
 	_, ok = sciWorkshops["S23"]
 	assert.True(t, ok)
+}
+
+func TestReadGroupsDeduplicatesPreferencesInOrder(t *testing.T) {
+	groupsCSV := `Teacher Name,Room Number,Grade,Group number,Names of students in this group (first and last),Art Workshops 1,Art Workshops 2,Art Workshops 3,Art Workshops 4,Science Workshop 1,Science Workshop 2,Science Workshop 3,Science Workshop 4,Presenter Kids
+Elizabeth,209,K,Group 5,"Carter Schwartz, Evelyn Anderson",A20,A20,A19,A15,S14,S14,S21,S25,S13
+`
+	path := filepath.Join(t.TempDir(), "groups.csv")
+	require.NoError(t, os.WriteFile(path, []byte(groupsCSV), 0o644))
+
+	groups, err := ReadGroups(path)
+	require.NoError(t, err)
+	require.Len(t, groups, 1)
+
+	assert.Equal(t, []string{"A20", "A19", "A15", ""}, groups[0].ArtIDs)
+	assert.Equal(t, []string{"S14", "S21", "S25", ""}, groups[0].SciIDs)
+}
+
+func TestGroupSatisfactionCalculatesPointsAndPercent(t *testing.T) {
+	group := testGroup("group-1", 3, 4, []string{"A1", "A2", "A3", "A4"}, []string{"S1", "S2", "S3", "S4"})
+	group.ParentIDs["S99"] = struct{}{}
+
+	group.BookWorkshop(0, testWorkshop("A2", ArtWorkshop, 3, 5, 10, []int{10, -1, -1, -1}))
+	group.BookWorkshop(1, testWorkshop("A9", ArtWorkshop, 3, 5, 10, []int{-1, 10, -1, -1}))
+	group.BookWorkshop(2, testWorkshop("S1", SciWorkshop, 3, 5, 10, []int{-1, -1, 10, -1}))
+	group.BookWorkshop(3, testWorkshop("S99", SciWorkshop, 3, 5, 10, []int{-1, -1, -1, 10}))
+
+	assert.Equal(t, 12, group.GetSatisfaction())
+	assert.Equal(t, 16, group.MaxSatisfaction())
+	assert.Equal(t, 75, group.SatisfactionPercent())
+}
+
+func TestGroupMaxSatisfactionIgnoresBlankPreferences(t *testing.T) {
+	group := testGroup("group-1", 3, 4, []string{"A1", "", "", ""}, []string{"", "", "", ""})
+	group.BookWorkshop(0, testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{10, -1, -1, -1}))
+	group.BookWorkshop(1, testWorkshop("A9", ArtWorkshop, 3, 5, 10, []int{-1, 10, -1, -1}))
+	group.BookWorkshop(2, testWorkshop("S9", SciWorkshop, 3, 5, 10, []int{-1, -1, 10, -1}))
+	group.BookWorkshop(3, testWorkshop("S8", SciWorkshop, 3, 5, 10, []int{-1, -1, -1, 10}))
+
+	assert.Equal(t, 4, group.MaxSatisfaction())
+	assert.Equal(t, 100, group.SatisfactionPercent())
+}
+
+func TestGroupSatisfactionDoesNotDoubleCountDuplicatePreferences(t *testing.T) {
+	group := testGroup("group-1", 0, 4, []string{"A20", "A19", "A15", "A14"}, []string{"S14", "S21", "S25", ""})
+	group.ParentIDs["S13"] = struct{}{}
+
+	group.BookWorkshop(0, testWorkshop("A20", ArtWorkshop, 0, 0, 10, []int{10, -1, -1, -1}))
+	group.BookWorkshop(1, testWorkshop("A19", ArtWorkshop, 0, 0, 10, []int{-1, 10, -1, -1}))
+	group.BookWorkshop(2, testWorkshop("S14", SciWorkshop, 0, 0, 10, []int{-1, -1, 10, -1}))
+	group.BookWorkshop(3, testWorkshop("S13", SciWorkshop, 0, 0, 10, []int{-1, -1, -1, 10}))
+
+	assert.Equal(t, 16, group.GetSatisfaction())
+	assert.Equal(t, 16, group.MaxSatisfaction())
+	assert.Equal(t, 100, group.SatisfactionPercent())
 }
 
 func testGroup(id string, grade, students int, artIDs, sciIDs []string) *Group {

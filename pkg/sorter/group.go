@@ -49,8 +49,8 @@ func ReadGroups(file string) ([]*Group, error) {
 		}
 
 		name := record[3]
-		artIDs := record[5:9]
-		sciIDs := record[9:13]
+		artIDs := normalizePreferences(record[5:9])
+		sciIDs := normalizePreferences(record[9:13])
 
 		parentIDs := make(map[string]struct{})
 		parentIDsRaw := strings.Split(record[13], " ")
@@ -151,30 +151,86 @@ func (g *Group) HowPreferredIsBookedSciWorkshop(sessionNumber int) int {
 func (g *Group) GetSatisfaction() int {
 	satisfaction := 0
 
-	for _, workshop := range g.workshops {
-		if workshop == nil {
+	for session := range g.workshops {
+		if g.workshops[session] == nil {
 			return 0
 		}
-		if _, ok := g.ParentIDs[workshop.id]; ok {
-			satisfaction += 5
-			continue
-		}
-
-		var preferences []string
-		if workshop.Kind == ArtWorkshop {
-			preferences = g.ArtIDs
-		} else {
-			preferences = g.SciIDs
-		}
-
-		for i := range preferences {
-			if workshop.id == preferences[i] {
-				satisfaction += 4 - i
-			}
-		}
+		satisfaction += g.SessionSatisfactionPoints(session)
 	}
 
 	return satisfaction
+}
+
+func (g *Group) MaxSatisfaction() int {
+	artParentCount := 0
+	sciParentCount := 0
+	for parentID := range g.ParentIDs {
+		if idToKind(parentID) == ArtWorkshop {
+			artParentCount++
+		} else {
+			sciParentCount++
+		}
+	}
+
+	artParentCount = min(artParentCount, numArtSessions)
+	sciParentCount = min(sciParentCount, numSciSessions)
+
+	maxSatisfaction := artParentCount*5 + sciParentCount*5
+	maxSatisfaction += maxPreferencePoints(g.ArtIDs, numArtSessions-artParentCount)
+	maxSatisfaction += maxPreferencePoints(g.SciIDs, numSciSessions-sciParentCount)
+
+	return maxSatisfaction
+}
+
+func (g *Group) SatisfactionPercent() int {
+	maxSatisfaction := g.MaxSatisfaction()
+	if maxSatisfaction == 0 {
+		return 0
+	}
+
+	return g.GetSatisfaction() * 100 / maxSatisfaction
+}
+
+func (g *Group) SessionSatisfactionPoints(session int) int {
+	workshop := g.GetWorkshop(session)
+	if workshop == nil {
+		return 0
+	}
+
+	if _, ok := g.ParentIDs[workshop.id]; ok {
+		return 5
+	}
+
+	preferenceRank := g.HowPreferredIsBookedWorkshop(session)
+	if preferenceRank < 1 || preferenceRank > 4 {
+		return 0
+	}
+
+	return 5 - preferenceRank
+}
+
+func (g *Group) SessionSatisfactionLabel(session int) string {
+	workshop := g.GetWorkshop(session)
+	if workshop == nil {
+		return "Not Scheduled"
+	}
+
+	if _, ok := g.ParentIDs[workshop.id]; ok {
+		return "Parent Workshop"
+	}
+
+	switch g.HowPreferredIsBookedWorkshop(session) {
+	case 1:
+		return "1st Choice"
+	case 2:
+		return "2nd Choice"
+	case 3:
+		return "3rd Choice"
+	case 4:
+		return "4th Choice"
+	default:
+		return "Fallback"
+	}
 }
 
 func (g *Group) GetWorkshop(session int) *Workshop {
@@ -188,12 +244,7 @@ func (g *Group) HowPreferredIsBookedWorkshop(session int) int {
 		return 5
 	}
 
-	var preferences []string
-	if idToKind(workshop.id) == ArtWorkshop {
-		preferences = g.ArtIDs
-	} else {
-		preferences = g.SciIDs
-	}
+	preferences := g.preferencesForKind(idToKind(workshop.id))
 	for i := range preferences {
 		if preferences[i] == workshop.id {
 			return i + 1
@@ -208,6 +259,56 @@ func (g Group) NumStudents() int {
 	return len(g.students)
 }
 
+func normalizePreferences(preferences []string) []string {
+	normalized := make([]string, 0, len(preferences))
+	seen := make(map[string]struct{}, len(preferences))
+
+	for _, preference := range preferences {
+		preference = strings.TrimSpace(preference)
+		if preference == "" {
+			continue
+		}
+		if _, ok := seen[preference]; ok {
+			continue
+		}
+
+		seen[preference] = struct{}{}
+		normalized = append(normalized, preference)
+	}
+
+	for len(normalized) < len(preferences) {
+		normalized = append(normalized, "")
+	}
+
+	return normalized
+}
+
+func (g *Group) preferencesForKind(kind int) []string {
+	if kind == ArtWorkshop {
+		return g.ArtIDs
+	}
+	return g.SciIDs
+}
+
+func maxPreferencePoints(preferences []string, slots int) int {
+	points := 0
+	counted := 0
+
+	for i, preference := range preferences {
+		if counted == slots {
+			break
+		}
+		if strings.TrimSpace(preference) == "" {
+			continue
+		}
+
+		points += 4 - i
+		counted++
+	}
+
+	return points
+}
+
 func (g *Group) Print(w io.Writer) {
 	_, _ = fmt.Fprintf(w, "Teacher = %s  \n", g.Teacher)
 	if g.Grade == 0 {
@@ -216,7 +317,7 @@ func (g *Group) Print(w io.Writer) {
 		_, _ = fmt.Fprintf(w, "Grade = %d  \n", g.Grade)
 	}
 	_, _ = fmt.Fprintf(w, "ID = %s  \n", g.id)
-	//fmt.Fprintf(w, "Satisfaction =  %d\n", g.GetSatisfaction())
+	_, _ = fmt.Fprintf(w, "Satisfaction = %d%%  \n", g.SatisfactionPercent())
 	_, _ = fmt.Fprintf(w, "Students =  %v  \n", strings.Join(g.students, ","))
 	//fmt.Fprintf(w, "Art Preferences = %v  \n", g.ArtIDs)
 	if len(g.ParentIDs) > 0 {
@@ -227,13 +328,13 @@ func (g *Group) Print(w io.Writer) {
 		_, _ = fmt.Fprintf(w, "Group contains child of presenter or assistant of workshop = %v  \n", strings.Join(parentIDs, ","))
 	}
 	_, _ = fmt.Fprintln(w, "Schedule")
-	_, _ = fmt.Fprintln(w, "| ID | Class | Room |")
-	_, _ = fmt.Fprintln(w, "| -- | ----- | ---- |")
-	for _, workshop := range g.workshops {
+	_, _ = fmt.Fprintln(w, "| ID | Class | Room | Match |")
+	_, _ = fmt.Fprintln(w, "| -- | ----- | ---- | ----- |")
+	for session, workshop := range g.workshops {
 		if workshop != nil {
-			_, _ = fmt.Fprintf(w, "| %s | %s | %s |\n", workshop.id, workshop.Name, workshop.room)
+			_, _ = fmt.Fprintf(w, "| %s | %s | %s | %s |\n", workshop.id, workshop.Name, workshop.room, g.SessionSatisfactionLabel(session))
 		} else {
-			_, _ = fmt.Fprintf(w, "| - | - | - |\n")
+			_, _ = fmt.Fprintf(w, "| - | - | - | Not Scheduled |\n")
 			log.Printf("====UNFILLED SLOT====\n")
 		}
 	}
@@ -281,6 +382,7 @@ func (g *Group) PrintHTML(w io.Writer) {
 		_, _ = fmt.Fprintf(w, "<p><strong>Grade:</strong> %d</p>\n", g.Grade)
 	}
 	_, _ = fmt.Fprintf(w, "<p><strong>Students:</strong> %s</p>\n", strings.Join(g.students, ", "))
+	_, _ = fmt.Fprintf(w, "<p><strong>Satisfaction:</strong> %d%%</p>\n", g.SatisfactionPercent())
 
 	if len(g.ParentIDs) > 0 {
 		parentIDs := make([]string, 0, len(g.ParentIDs))
@@ -293,7 +395,7 @@ func (g *Group) PrintHTML(w io.Writer) {
 	_, _ = fmt.Fprintf(w, "</div>\n")
 
 	_, _ = fmt.Fprintf(w, "<table class='schedule'>\n")
-	_, _ = fmt.Fprintf(w, "<thead>\n<tr>\n<th>Time</th>\n<th>Workshop ID</th>\n<th>Workshop Name</th>\n<th>Room</th>\n</tr>\n</thead>\n")
+	_, _ = fmt.Fprintf(w, "<thead>\n<tr>\n<th>Time</th>\n<th>Workshop ID</th>\n<th>Workshop Name</th>\n<th>Room</th>\n<th>Match</th>\n</tr>\n</thead>\n")
 	_, _ = fmt.Fprintf(w, "<tbody>\n")
 
 	workshopIndex := 0
@@ -308,8 +410,9 @@ func (g *Group) PrintHTML(w io.Writer) {
 				_, _ = fmt.Fprintf(w, "<td>%s</td>\n", workshop.id)
 				_, _ = fmt.Fprintf(w, "<td>%s</td>\n", workshop.Name)
 				_, _ = fmt.Fprintf(w, "<td>%s</td>\n", workshop.room)
+				_, _ = fmt.Fprintf(w, "<td>%s</td>\n", g.SessionSatisfactionLabel(workshopIndex))
 			} else {
-				_, _ = fmt.Fprintf(w, "<td colspan='3' class='unfilled'>Not Scheduled</td>\n")
+				_, _ = fmt.Fprintf(w, "<td colspan='4' class='unfilled'>Not Scheduled</td>\n")
 			}
 			workshopIndex++
 		}
