@@ -11,9 +11,8 @@ import (
 	"os"
 	"path/filepath"
 
-	groupPkg "github.com/clarendonjbbp/casd/pkg/group"
+	"github.com/clarendonjbbp/casd/pkg/booking"
 	"github.com/clarendonjbbp/casd/pkg/scheduler"
-	workshopPkg "github.com/clarendonjbbp/casd/pkg/workshop"
 )
 
 const (
@@ -104,11 +103,12 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := scheduler.Schedule(groups, artWorkshops, sciWorkshops, scheduler.ScheduleOptions{
+	state, err := scheduler.Schedule(groups, artWorkshops, sciWorkshops, scheduler.ScheduleOptions{
 		Random:                    random,
 		MinUtilization:            minUtilization,
 		ContinueOnParentLookupErr: true,
-	}); err != nil {
+	})
+	if err != nil {
 		http.Error(w, fmt.Sprintf("Error scheduling workshops: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -124,17 +124,17 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	output.WriteString(`<section class="results-panel is-active" id="results-groups" role="tabpanel" aria-labelledby="tab-groups">
 		<div class="section-content">`)
-	groupPkg.PrintGroupsHTML(&output, groups)
+	booking.PrintGroupsHTML(&output, groups, state)
 	output.WriteString(`</div></section>`)
 
 	output.WriteString(`<section class="results-panel" id="results-art" role="tabpanel" aria-labelledby="tab-art" hidden>
 		<div class="section-content">`)
-	workshopPkg.PrintWorkshopsHTML(&output, artWorkshops)
+	booking.PrintWorkshopsHTML(&output, artWorkshops, state)
 	output.WriteString(`</div></section>`)
 
 	output.WriteString(`<section class="results-panel" id="results-science" role="tabpanel" aria-labelledby="tab-science" hidden>
 		<div class="section-content">`)
-	workshopPkg.PrintWorkshopsHTML(&output, sciWorkshops)
+	booking.PrintWorkshopsHTML(&output, sciWorkshops, state)
 	output.WriteString(`</div></section>`)
 	output.WriteString("</div>")
 

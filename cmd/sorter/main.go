@@ -6,9 +6,8 @@ import (
 	"log"
 	"os"
 
-	groupPkg "github.com/clarendonjbbp/casd/pkg/group"
+	"github.com/clarendonjbbp/casd/pkg/booking"
 	"github.com/clarendonjbbp/casd/pkg/scheduler"
-	workshopPkg "github.com/clarendonjbbp/casd/pkg/workshop"
 )
 
 func main() {
@@ -25,21 +24,22 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := scheduler.Schedule(groups, artWorkshops, sciWorkshops, scheduler.ScheduleOptions{
+	state, err := scheduler.Schedule(groups, artWorkshops, sciWorkshops, scheduler.ScheduleOptions{
 		Random:                    *random,
 		MinUtilization:            *minUtilization,
 		ContinueOnParentLookupErr: false,
-	}); err != nil {
+	})
+	if err != nil {
 		log.Fatal(err)
 	}
 
 	if *printOutput {
 		fmt.Printf("# Community Arts and Sciences Day Assignments  \n\n")
 		fmt.Printf("## Groups  \n\n")
-		groupPkg.PrintGroups(os.Stdout, groups)
+		booking.PrintGroups(os.Stdout, groups, state)
 		fmt.Printf("## Art Workshops \n\n")
-		workshopPkg.PrintWorkshops(os.Stdout, artWorkshops)
+		booking.PrintWorkshops(os.Stdout, artWorkshops, state)
 		fmt.Printf("## Science Workshops  \n\n")
-		workshopPkg.PrintWorkshops(os.Stdout, sciWorkshops)
+		booking.PrintWorkshops(os.Stdout, sciWorkshops, state)
 	}
 }

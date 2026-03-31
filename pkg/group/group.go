@@ -1,12 +1,142 @@
 package group
 
-import "github.com/clarendonjbbp/casd/pkg/sorter"
+import (
+	"encoding/csv"
+	"fmt"
+	"io"
+	"os"
+	"strconv"
+	"strings"
 
-type Group = sorter.Group
-type ScheduleSummary = sorter.ScheduleSummary
+	"github.com/clarendonjbbp/casd/pkg/model"
+)
 
-var ReadGroups = sorter.ReadGroups
-var CalculateScheduleSummary = sorter.CalculateScheduleSummary
-var PrintScheduleSummary = sorter.PrintScheduleSummary
-var PrintGroups = sorter.PrintGroups
-var PrintGroupsHTML = sorter.PrintGroupsHTML
+type Group struct {
+	ParentIDs           map[string]struct{}
+	ParentBookingIssues map[string]string
+	Teacher             string
+	Name                string
+	Grade               int
+	Students            []string
+	ArtIDs              []string
+	SciIDs              []string
+	ID                  string
+}
+
+func ReadGroups(file string) ([]*Group, error) {
+	var groups []*Group
+
+	reader, err := readAndParseCSV(file)
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		teacher := strings.TrimSpace(record[0])
+
+		grade, err := getGrade(record[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid Grade %s for teacher %s: %w", record[2], teacher, err)
+		}
+
+		name := record[3]
+		artIDs := normalizePreferences(record[5:9])
+		sciIDs := normalizePreferences(record[9:13])
+
+		parentIDs := make(map[string]struct{})
+		parentIDsRaw := strings.Split(record[13], " ")
+		for _, parentID := range parentIDsRaw {
+			if parentID == "0" || parentID == "" {
+				continue
+			}
+			parentIDs[parentID] = struct{}{}
+		}
+
+		groups = append(groups, &Group{
+			Teacher:             teacher,
+			Grade:               grade,
+			Name:                name,
+			Students:            strings.Split(record[4], ","),
+			ArtIDs:              artIDs,
+			SciIDs:              sciIDs,
+			ParentIDs:           parentIDs,
+			ParentBookingIssues: make(map[string]string),
+			ID:                  fmt.Sprintf("%s-%d-%s", strings.ReplaceAll(teacher, " ", "_"), grade, strings.ReplaceAll(name, " ", "_")),
+		})
+	}
+
+	return groups, nil
+}
+
+func (g *Group) NumStudents() int {
+	return len(g.Students)
+}
+
+func (g *Group) PreferencesForKind(kind int) []string {
+	if kind == model.ArtWorkshop {
+		return g.ArtIDs
+	}
+	return g.SciIDs
+}
+
+func normalizePreferences(preferences []string) []string {
+	normalized := make([]string, 0, len(preferences))
+	seen := make(map[string]struct{}, len(preferences))
+
+	for _, preference := range preferences {
+		preference = strings.TrimSpace(preference)
+		if preference == "" {
+			continue
+		}
+		if _, ok := seen[preference]; ok {
+			continue
+		}
+
+		seen[preference] = struct{}{}
+		normalized = append(normalized, preference)
+	}
+
+	for len(normalized) < len(preferences) {
+		normalized = append(normalized, "")
+	}
+
+	return normalized
+}
+
+func readAndParseCSV(file string) (*csv.Reader, error) {
+	csvFile, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+
+	reader := csv.NewReader(csvFile)
+	_, err = reader.Read()
+	if err == io.EOF {
+		return nil, fmt.Errorf("empty csv file: %v", err)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return reader, nil
+}
+
+func getGrade(grade string) (int, error) {
+	if strings.ToLower(grade) == "k" {
+		return 0, nil
+	}
+
+	if grade == "4/5" {
+		return 4, nil
+	}
+
+	return strconv.Atoi(grade)
+}
