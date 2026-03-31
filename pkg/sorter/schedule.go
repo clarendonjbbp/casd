@@ -70,6 +70,7 @@ func bookParentClasses(groups []*Group, artWorkshops, sciWorkshops map[string]*W
 		for parentID := range group.ParentIDs {
 			workshop, err := GetWorkshopFromID(parentID, artWorkshops, sciWorkshops)
 			if err != nil {
+				group.ParentBookingIssues[parentID] = "workshop not found"
 				if continueOnLookupErr {
 					log.Printf("Error finding parent class for teacher=%s group=%s: %v", group.Teacher, group.Name, err)
 					continue
@@ -78,7 +79,8 @@ func bookParentClasses(groups []*Group, artWorkshops, sciWorkshops map[string]*W
 			}
 
 			if booked := BookWorkshopIfAvailable(workshop, group); !booked {
-				log.Printf("Unable to book parent ID=%s. teacher=%s group=%s", parentID, group.Teacher, group.Name)
+				group.ParentBookingIssues[parentID] = BookingFailureReason(workshop, group)
+				log.Printf("Unable to book parent ID=%s. teacher=%s group=%s reason=%s", parentID, group.Teacher, group.Name, group.ParentBookingIssues[parentID])
 			}
 		}
 	}
