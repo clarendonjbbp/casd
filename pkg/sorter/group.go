@@ -23,6 +23,14 @@ type Group struct {
 	id        string
 }
 
+type ScheduleSummary struct {
+	OverallSatisfactionPoints  int
+	AverageSatisfactionPercent int
+	GroupsWithPreferredArt     int
+	GroupsWithPreferredScience int
+	TotalGroups                int
+}
+
 func ReadGroups(file string) ([]*Group, error) {
 	var groups []*Group
 
@@ -233,6 +241,21 @@ func (g *Group) SessionSatisfactionLabel(session int) string {
 	}
 }
 
+func (g *Group) HasPreferredWorkshopOfKind(kind int) bool {
+	for session, workshop := range g.workshops {
+		if workshop == nil || idToKind(workshop.id) != kind {
+			continue
+		}
+
+		preferenceRank := g.HowPreferredIsBookedWorkshop(session)
+		if preferenceRank >= 1 && preferenceRank <= 4 {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (g *Group) GetWorkshop(session int) *Workshop {
 	return g.workshops[session]
 }
@@ -309,6 +332,42 @@ func maxPreferencePoints(preferences []string, slots int) int {
 	return points
 }
 
+func CalculateScheduleSummary(groups []*Group) ScheduleSummary {
+	summary := ScheduleSummary{
+		TotalGroups: len(groups),
+	}
+
+	if len(groups) == 0 {
+		return summary
+	}
+
+	for _, group := range groups {
+		summary.OverallSatisfactionPoints += group.GetSatisfaction()
+		summary.AverageSatisfactionPercent += group.SatisfactionPercent()
+		if group.HasPreferredWorkshopOfKind(ArtWorkshop) {
+			summary.GroupsWithPreferredArt++
+		}
+		if group.HasPreferredWorkshopOfKind(SciWorkshop) {
+			summary.GroupsWithPreferredScience++
+		}
+	}
+
+	summary.AverageSatisfactionPercent /= len(groups)
+
+	return summary
+}
+
+func PrintScheduleSummary(w io.Writer, groups []*Group) {
+	summary := CalculateScheduleSummary(groups)
+
+	_, _ = fmt.Fprintln(w, "## Schedule Summary")
+	_, _ = fmt.Fprintf(w, "- Overall satisfaction points: %d\n", summary.OverallSatisfactionPoints)
+	_, _ = fmt.Fprintf(w, "- Average satisfaction: %d%%\n", summary.AverageSatisfactionPercent)
+	_, _ = fmt.Fprintf(w, "- Groups with at least 1 preferred art workshop: %d / %d\n", summary.GroupsWithPreferredArt, summary.TotalGroups)
+	_, _ = fmt.Fprintf(w, "- Groups with at least 1 preferred science workshop: %d / %d\n", summary.GroupsWithPreferredScience, summary.TotalGroups)
+	_, _ = fmt.Fprintln(w)
+}
+
 func (g *Group) Print(w io.Writer) {
 	_, _ = fmt.Fprintf(w, "Teacher = %s  \n", g.Teacher)
 	if g.Grade == 0 {
@@ -360,6 +419,8 @@ func SortGroupsByPrefferedArtSession(sessionNumber int, groups []*Group) []*Grou
 }
 
 func PrintGroups(w io.Writer, groups []*Group) {
+	PrintScheduleSummary(w, groups)
+
 	sort.Slice(groups, func(i, j int) bool {
 		idi := fmt.Sprintf("%s-%d-%s  \n", strings.ReplaceAll(groups[i].Teacher, " ", "_"), groups[i].Grade, strings.ReplaceAll(groups[i].Name, " ", "_"))
 		idj := fmt.Sprintf("%s-%d-%s  \n", strings.ReplaceAll(groups[j].Teacher, " ", "_"), groups[j].Grade, strings.ReplaceAll(groups[j].Name, " ", "_"))
@@ -424,8 +485,50 @@ func (g *Group) PrintHTML(w io.Writer) {
 }
 
 func PrintGroupsHTML(w io.Writer, groups []*Group) {
+	summary := CalculateScheduleSummary(groups)
+
 	// Write CSS styles
 	_, _ = fmt.Fprintf(w, `<style>
+.schedule-summary {
+    margin-bottom: 1.5em;
+    padding: 1.2em;
+    border: 1px solid rgba(36, 55, 76, 0.14);
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(237,248,255,0.94));
+    box-shadow: 0 14px 38px rgba(36, 55, 76, 0.08);
+}
+.schedule-summary h3 {
+    margin: 0 0 0.8em;
+    color: #141f26;
+    font-family: "Montserrat", "Avenir Next", "Futura", "Trebuchet MS", sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.schedule-summary-grid {
+    display: grid;
+    gap: 0.85em;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.schedule-summary-card {
+    padding: 0.95em 1em;
+    border-radius: 18px;
+    background: rgba(233, 244, 253, 0.9);
+    border: 1px solid rgba(73, 135, 87, 0.12);
+}
+.schedule-summary-card .label {
+    display: block;
+    margin-bottom: 0.3em;
+    color: #52717c;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.schedule-summary-card .value {
+    color: #19364a;
+    font-size: 1.45rem;
+    font-weight: 700;
+}
 .group {
     margin-bottom: 1.5em;
     padding: 1.2em;
@@ -484,6 +587,17 @@ func PrintGroupsHTML(w io.Writer, groups []*Group) {
 }
 </style>
 `)
+
+	_, _ = fmt.Fprintf(w, `<section class="schedule-summary">
+<h3>Schedule Summary</h3>
+<div class="schedule-summary-grid">
+<div class="schedule-summary-card"><span class="label">Overall Satisfaction Points</span><span class="value">%d</span></div>
+<div class="schedule-summary-card"><span class="label">Average Satisfaction</span><span class="value">%d%%</span></div>
+<div class="schedule-summary-card"><span class="label">Preferred Art</span><span class="value">%d / %d</span></div>
+<div class="schedule-summary-card"><span class="label">Preferred Science</span><span class="value">%d / %d</span></div>
+</div>
+</section>
+`, summary.OverallSatisfactionPoints, summary.AverageSatisfactionPercent, summary.GroupsWithPreferredArt, summary.TotalGroups, summary.GroupsWithPreferredScience, summary.TotalGroups)
 
 	// Sort groups by teacher name for consistent display
 	sortedGroups := make([]*Group, len(groups))

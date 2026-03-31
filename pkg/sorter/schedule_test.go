@@ -150,6 +150,28 @@ func TestGroupSatisfactionDoesNotDoubleCountDuplicatePreferences(t *testing.T) {
 	assert.Equal(t, 100, group.SatisfactionPercent())
 }
 
+func TestCalculateScheduleSummary(t *testing.T) {
+	first := testGroup("group-1", 3, 4, []string{"A1", "A2", "A3", "A4"}, []string{"S1", "S2", "S3", "S4"})
+	first.BookWorkshop(0, testWorkshop("A1", ArtWorkshop, 3, 5, 10, []int{10, -1, -1, -1}))
+	first.BookWorkshop(1, testWorkshop("A9", ArtWorkshop, 3, 5, 10, []int{-1, 10, -1, -1}))
+	first.BookWorkshop(2, testWorkshop("S2", SciWorkshop, 3, 5, 10, []int{-1, -1, 10, -1}))
+	first.BookWorkshop(3, testWorkshop("S9", SciWorkshop, 3, 5, 10, []int{-1, -1, -1, 10}))
+
+	second := testGroup("group-2", 3, 4, []string{"A5", "A6", "A7", "A8"}, []string{"S5", "S6", "S7", "S8"})
+	second.BookWorkshop(0, testWorkshop("A9", ArtWorkshop, 3, 5, 10, []int{10, -1, -1, -1}))
+	second.BookWorkshop(1, testWorkshop("A6", ArtWorkshop, 3, 5, 10, []int{-1, 10, -1, -1}))
+	second.BookWorkshop(2, testWorkshop("S5", SciWorkshop, 3, 5, 10, []int{-1, -1, 10, -1}))
+	second.BookWorkshop(3, testWorkshop("S8", SciWorkshop, 3, 5, 10, []int{-1, -1, -1, 10}))
+
+	summary := CalculateScheduleSummary([]*Group{first, second})
+
+	assert.Equal(t, 15, summary.OverallSatisfactionPoints)
+	assert.Equal(t, 53, summary.AverageSatisfactionPercent)
+	assert.Equal(t, 2, summary.GroupsWithPreferredArt)
+	assert.Equal(t, 2, summary.GroupsWithPreferredScience)
+	assert.Equal(t, 2, summary.TotalGroups)
+}
+
 func testGroup(id string, grade, students int, artIDs, sciIDs []string) *Group {
 	studentNames := make([]string, students)
 	for i := range studentNames {
