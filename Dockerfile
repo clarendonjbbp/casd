@@ -1,6 +1,6 @@
 # Build stage
 ARG go_version=1.23.8
-ARG alpine_version=3.21
+ARG alpine_version=3.23
 FROM --platform=$BUILDPLATFORM golang:${go_version}-alpine${alpine_version} AS builder
 
 # Set the working directory

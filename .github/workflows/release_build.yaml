@@ -67,13 +67,21 @@ jobs:
         env:
           VERSION_BUMP: ${{ github.event_name == 'workflow_dispatch' && inputs.version_bump || '' }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message || '' }}
+          COMMITS_JSON: ${{ toJson(github.event.commits) }}
         run: |
           # Get latest tag
           LATEST_TAG=$(git describe --tags --abbrev=0 | sed 's/^v//')
           IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_TAG"
 
           if [ -z "$VERSION_BUMP" ]; then
-            case "$COMMIT_MESSAGE" in
+            PUSH_MESSAGES="$COMMIT_MESSAGE"
+
+            if [ -n "$COMMITS_JSON" ] && command -v jq >/dev/null 2>&1; then
+              EXTRA_MESSAGES=$(printf '%s' "$COMMITS_JSON" | jq -r '.[].message // empty')
+              PUSH_MESSAGES=$(printf '%s\n%s' "$PUSH_MESSAGES" "$EXTRA_MESSAGES")
+            fi
+
+            case "$PUSH_MESSAGES" in
               *"[major]"*|*"#major"*)
                 VERSION_BUMP=major
                 ;;

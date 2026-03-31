@@ -38,7 +38,7 @@ PLATFORMS ?= linux/amd64,linux/arm64
 IMAGE_NAME ?= ghcr.io/clarendonjbbp/casd
 TAG ?= latest
 go_version := $(shell sed -En 's/^go[ ]+([0-9.]+).*/\1/p' go.mod)
-ALPINE_VERSION ?= 3.21
+ALPINE_VERSION ?= 3.23
 
 E:=@
 ifeq ($(V),1)
