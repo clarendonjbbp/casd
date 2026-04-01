@@ -21,11 +21,11 @@ type Booking struct {
 }
 
 type ScheduleState struct {
-	bookings               []*Booking
-	bookingsByGroup        map[string][]*Booking
-	bookingsByGroupSession map[groupSessionKey]*Booking
-	bookingsByWorkshopSess map[workshopSessionKey][]*Booking
-	randomSelection        bool
+	bookings                  []*Booking
+	bookingsByGroup           map[string][]*Booking
+	bookingsByGroupSession    map[groupSessionKey]*Booking
+	bookingsByWorkshopSession map[workshopSessionKey][]*Booking
+	randomSelection           bool
 }
 
 type groupSessionKey struct {
@@ -48,9 +48,9 @@ type ScheduleSummary struct {
 
 func NewScheduleState(_ []*groupPkg.Group, _ ...map[string]*workshopPkg.Workshop) *ScheduleState {
 	return &ScheduleState{
-		bookingsByGroup:        make(map[string][]*Booking),
-		bookingsByGroupSession: make(map[groupSessionKey]*Booking),
-		bookingsByWorkshopSess: make(map[workshopSessionKey][]*Booking),
+		bookingsByGroup:           make(map[string][]*Booking),
+		bookingsByGroupSession:    make(map[groupSessionKey]*Booking),
+		bookingsByWorkshopSession: make(map[workshopSessionKey][]*Booking),
 	}
 }
 
@@ -68,7 +68,7 @@ func (s *ScheduleState) Book(group *groupPkg.Group, workshop *workshopPkg.Worksh
 	s.bookingsByGroup[group.ID] = append(s.bookingsByGroup[group.ID], booking)
 	s.bookingsByGroupSession[groupSessionKey{groupID: group.ID, session: session}] = booking
 	workshopKey := workshopSessionKey{workshopID: workshop.ID, session: session}
-	s.bookingsByWorkshopSess[workshopKey] = append(s.bookingsByWorkshopSess[workshopKey], booking)
+	s.bookingsByWorkshopSession[workshopKey] = append(s.bookingsByWorkshopSession[workshopKey], booking)
 	delete(group.ParentBookingIssues, workshop.ID)
 }
 
@@ -91,7 +91,7 @@ func (s *ScheduleState) Unbook(group *groupPkg.Group, workshop *workshopPkg.Work
 			}
 			delete(s.bookingsByGroupSession, groupSessionKey{groupID: group.ID, session: session})
 			workshopKey := workshopSessionKey{workshopID: workshop.ID, session: session}
-			workshopBookings := s.bookingsByWorkshopSess[workshopKey]
+			workshopBookings := s.bookingsByWorkshopSession[workshopKey]
 			for j := range workshopBookings {
 				if workshopBookings[j] == booking {
 					workshopBookings = slices.Delete(workshopBookings, j, j+1)
@@ -99,9 +99,9 @@ func (s *ScheduleState) Unbook(group *groupPkg.Group, workshop *workshopPkg.Work
 				}
 			}
 			if len(workshopBookings) == 0 {
-				delete(s.bookingsByWorkshopSess, workshopKey)
+				delete(s.bookingsByWorkshopSession, workshopKey)
 			} else {
-				s.bookingsByWorkshopSess[workshopKey] = workshopBookings
+				s.bookingsByWorkshopSession[workshopKey] = workshopBookings
 			}
 			return
 		}
@@ -117,7 +117,7 @@ func (s *ScheduleState) WorkshopForGroupSession(group *groupPkg.Group, session i
 }
 
 func (s *ScheduleState) GroupsForWorkshopSession(workshop *workshopPkg.Workshop, session int) []*groupPkg.Group {
-	bookings := s.bookingsByWorkshopSess[workshopSessionKey{workshopID: workshop.ID, session: session}]
+	bookings := s.bookingsByWorkshopSession[workshopSessionKey{workshopID: workshop.ID, session: session}]
 	groups := make([]*groupPkg.Group, 0, len(bookings))
 	for _, booking := range bookings {
 		groups = append(groups, booking.Group)
@@ -156,7 +156,7 @@ func (s *ScheduleState) SpotsAvailable(workshop *workshopPkg.Workshop, session i
 	}
 
 	spotsTaken := 0
-	for _, booking := range s.bookingsByWorkshopSess[workshopSessionKey{workshopID: workshop.ID, session: session}] {
+	for _, booking := range s.bookingsByWorkshopSession[workshopSessionKey{workshopID: workshop.ID, session: session}] {
 		spotsTaken += booking.Group.NumStudents()
 	}
 
