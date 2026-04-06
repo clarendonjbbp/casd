@@ -14,10 +14,10 @@ import (
 )
 
 func TestReadCSVFilesLoadsRepositoryFixtures(t *testing.T) {
-	root := filepath.Join("..", "..")
+	root := filepath.Join("..", "..", "testdata", "2024")
 
 	groups, artWorkshops, sciWorkshops, err := ReadCSVFiles(
-		filepath.Join(root, "groups.csv"),
+		filepath.Join(root, "groups_randomized.csv"),
 		filepath.Join(root, "artworkshops.csv"),
 		filepath.Join(root, "scienceworkshops.csv"),
 	)

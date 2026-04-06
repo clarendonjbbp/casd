@@ -140,12 +140,7 @@ func printGroupHTML(w io.Writer, group *groupPkg.Group, state *ScheduleState) {
 	_, _ = fmt.Fprintf(w, "<p><strong>Students:</strong> %s</p>\n", strings.Join(group.Students, ", "))
 	_, _ = fmt.Fprintf(w, "<p><strong>Satisfaction:</strong> %d%%</p>\n", SatisfactionPercent(group, state))
 
-	if len(group.ParentIDs) > 0 {
-		parentIDs := make([]string, 0, len(group.ParentIDs))
-		for parentID := range group.ParentIDs {
-			parentIDs = append(parentIDs, parentID)
-		}
-		sort.Strings(parentIDs)
+	if parentIDs := group.SortedParentIDs(); len(parentIDs) > 0 {
 		_, _ = fmt.Fprintf(w, "<p><strong>Parent Workshops:</strong> %s</p>\n", strings.Join(parentIDs, ", "))
 	}
 	if issues := SortedParentBookingIssues(group); len(issues) > 0 {

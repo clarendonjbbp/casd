@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"sort"
 	"time"
 
 	"github.com/clarendonjbbp/casd/pkg/booking"
@@ -77,13 +76,7 @@ func Schedule(groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*w
 
 func bookParentClasses(state *booking.ScheduleState, groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*workshopPkg.Workshop, continueOnLookupErr bool) error {
 	for _, group := range groups {
-		parentIDs := make([]string, 0, len(group.ParentIDs))
-		for parentID := range group.ParentIDs {
-			parentIDs = append(parentIDs, parentID)
-		}
-		sort.Strings(parentIDs)
-
-		for _, parentID := range parentIDs {
+		for _, parentID := range group.SortedParentIDs() {
 			workshop, err := getWorkshopFromID(parentID, artWorkshops, sciWorkshops)
 			if err != nil {
 				group.ParentBookingIssues[parentID] = "workshop not found"

@@ -23,6 +23,7 @@ go.work
 # Vi
 *.swp
 *.swo
+.DS_Store
 
 # Build and toolchain
 /sorter

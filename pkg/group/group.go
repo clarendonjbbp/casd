@@ -4,7 +4,11 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"maps"
 	"os"
+	"regexp"
+	"slices"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -22,6 +26,8 @@ type Group struct {
 	SciIDs              []string
 	ID                  string
 }
+
+var workshopIDPattern = regexp.MustCompile(`(?i)^\s*([AS]\d+)\b`)
 
 func ReadGroups(file string) ([]*Group, error) {
 	var groups []*Group
@@ -52,8 +58,7 @@ func ReadGroups(file string) ([]*Group, error) {
 		sciIDs := normalizePreferences(record[9:13])
 
 		parentIDs := make(map[string]struct{})
-		parentIDsRaw := strings.Split(record[13], " ")
-		for _, parentID := range parentIDsRaw {
+		for _, parentID := range normalizeParentIDs(record[13]) {
 			if parentID == "0" || parentID == "" {
 				continue
 			}
@@ -87,12 +92,18 @@ func (g *Group) PreferencesForKind(kind int) []string {
 	return g.SciIDs
 }
 
+func (g *Group) SortedParentIDs() []string {
+	parentIDs := slices.Collect(maps.Keys(g.ParentIDs))
+	sort.Strings(parentIDs)
+	return parentIDs
+}
+
 func normalizePreferences(preferences []string) []string {
 	normalized := make([]string, 0, len(preferences))
 	seen := make(map[string]struct{}, len(preferences))
 
 	for _, preference := range preferences {
-		preference = strings.TrimSpace(preference)
+		preference = normalizeWorkshopReference(preference)
 		if preference == "" {
 			continue
 		}
@@ -109,6 +120,47 @@ func normalizePreferences(preferences []string) []string {
 	}
 
 	return normalized
+}
+
+func normalizeParentIDs(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+
+	parts := strings.Fields(raw)
+	if len(parts) == 1 {
+		normalized := normalizeWorkshopReference(parts[0])
+		if normalized == "" {
+			return nil
+		}
+		return []string{normalized}
+	}
+
+	normalized := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = normalizeWorkshopReference(part)
+		if part == "" {
+			continue
+		}
+		normalized = append(normalized, part)
+	}
+
+	return normalized
+}
+
+func normalizeWorkshopReference(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+
+	matches := workshopIDPattern.FindStringSubmatch(value)
+	if len(matches) == 2 {
+		return strings.ToUpper(matches[1])
+	}
+
+	return value
 }
 
 func readAndParseCSV(file string) (*csv.Reader, error) {

@@ -45,12 +45,7 @@ func printGroup(w io.Writer, group *groupPkg.Group, state *ScheduleState) {
 	_, _ = fmt.Fprintf(w, "ID = %s  \n", group.ID)
 	_, _ = fmt.Fprintf(w, "Satisfaction = %d%%  \n", SatisfactionPercent(group, state))
 	_, _ = fmt.Fprintf(w, "Students =  %v  \n", strings.Join(group.Students, ","))
-	if len(group.ParentIDs) > 0 {
-		parentIDs := make([]string, 0, len(group.ParentIDs))
-		for parentID := range group.ParentIDs {
-			parentIDs = append(parentIDs, parentID)
-		}
-		sort.Strings(parentIDs)
+	if parentIDs := group.SortedParentIDs(); len(parentIDs) > 0 {
 		_, _ = fmt.Fprintf(w, "Group contains child of presenter or assistant of workshop = %v  \n", strings.Join(parentIDs, ","))
 	}
 	if issues := SortedParentBookingIssues(group); len(issues) > 0 {
