@@ -17,9 +17,10 @@ func TestBookWorkshopIfAvailableBooksSessionWithMostRemainingCapacity(t *testing
 	state := testScheduleState([]*groupPkg.Group{group, filler}, workshop)
 	state.Book(filler, workshop, 0)
 
-	booked := BookWorkshopIfAvailable(state, workshop, group)
+	booked, reason := BookWorkshopIfAvailable(state, workshop, group)
 
 	assert.True(t, booked)
+	assert.Empty(t, reason)
 	assert.Same(t, workshop, state.WorkshopForGroupSession(group, 1))
 	assert.Equal(t, 6, state.SpotsAvailable(workshop, 1))
 	require.Len(t, state.GroupsForWorkshopSession(workshop, 1), 1)
@@ -31,9 +32,10 @@ func TestBookWorkshopIfAvailableRejectsOutOfGradeRange(t *testing.T) {
 	workshop := testWorkshop("A1", model.ArtWorkshop, 3, 5, 10, []int{10, -1, -1, -1})
 	state := testScheduleState([]*groupPkg.Group{group}, workshop)
 
-	booked := BookWorkshopIfAvailable(state, workshop, group)
+	booked, reason := BookWorkshopIfAvailable(state, workshop, group)
 
 	assert.False(t, booked)
+	assert.Equal(t, "grade mismatch", reason)
 }
 
 func TestBookWorkshopIfAvailableRejectsDuplicateWorkshop(t *testing.T) {
@@ -42,9 +44,10 @@ func TestBookWorkshopIfAvailableRejectsDuplicateWorkshop(t *testing.T) {
 	state := testScheduleState([]*groupPkg.Group{group}, workshop)
 	state.Book(group, workshop, 0)
 
-	booked := BookWorkshopIfAvailable(state, workshop, group)
+	booked, reason := BookWorkshopIfAvailable(state, workshop, group)
 
 	assert.False(t, booked)
+	assert.Equal(t, "duplicate workshop", reason)
 }
 
 func TestBookWorkshopIfAvailableRejectsWhenCapacityIsTooSmall(t *testing.T) {
@@ -52,9 +55,10 @@ func TestBookWorkshopIfAvailableRejectsWhenCapacityIsTooSmall(t *testing.T) {
 	workshop := testWorkshop("A1", model.ArtWorkshop, 3, 5, 3, []int{3, -1, -1, -1})
 	state := testScheduleState([]*groupPkg.Group{group}, workshop)
 
-	booked := BookWorkshopIfAvailable(state, workshop, group)
+	booked, reason := BookWorkshopIfAvailable(state, workshop, group)
 
 	assert.False(t, booked)
+	assert.Equal(t, "no available session with enough capacity", reason)
 }
 
 func TestBookWorkshopIfAvailableUsesDeterministicFirstSessionWhenRandomDisabled(t *testing.T) {
@@ -63,9 +67,10 @@ func TestBookWorkshopIfAvailableUsesDeterministicFirstSessionWhenRandomDisabled(
 	state := testScheduleState([]*groupPkg.Group{group}, workshop)
 	state.SetRandomSelection(false)
 
-	booked := BookWorkshopIfAvailable(state, workshop, group)
+	booked, reason := BookWorkshopIfAvailable(state, workshop, group)
 
 	assert.True(t, booked)
+	assert.Empty(t, reason)
 	assert.Same(t, workshop, state.WorkshopForGroupSession(group, 0))
 	assert.Nil(t, state.WorkshopForGroupSession(group, 1))
 }

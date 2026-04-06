@@ -220,9 +220,9 @@ func (s *ScheduleState) AvailableSessions(workshop *workshopPkg.Workshop, group 
 	return availableSessions
 }
 
-func BookWorkshopIfAvailable(state *ScheduleState, workshop *workshopPkg.Workshop, group *groupPkg.Group) bool {
+func BookWorkshopIfAvailable(state *ScheduleState, workshop *workshopPkg.Workshop, group *groupPkg.Group) (bool, string) {
 	if reason := BookingFailureReason(state, workshop, group); reason != "" {
-		return false
+		return false, reason
 	}
 
 	sessions := state.AvailableSessions(workshop, group)
@@ -232,7 +232,7 @@ func BookWorkshopIfAvailable(state *ScheduleState, workshop *workshopPkg.Worksho
 	}
 	state.Book(group, workshop, sessions[sessionIndex])
 
-	return true
+	return true, ""
 }
 
 func BookingFailureReason(state *ScheduleState, workshop *workshopPkg.Workshop, group *groupPkg.Group) string {

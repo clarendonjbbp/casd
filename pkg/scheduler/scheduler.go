@@ -87,8 +87,8 @@ func bookParentClasses(state *booking.ScheduleState, groups []*groupPkg.Group, a
 				return fmt.Errorf("error finding parent class for teacher=%s group=%s: %w", group.Teacher, group.Name, err)
 			}
 
-			if booked := booking.BookWorkshopIfAvailable(state, workshop, group); !booked {
-				group.ParentBookingIssues[parentID] = booking.BookingFailureReason(state, workshop, group)
+			if booked, reason := booking.BookWorkshopIfAvailable(state, workshop, group); !booked {
+				group.ParentBookingIssues[parentID] = reason
 				log.Printf("Unable to book parent ID=%s. teacher=%s group=%s reason=%s", parentID, group.Teacher, group.Name, group.ParentBookingIssues[parentID])
 			}
 		}
@@ -112,7 +112,7 @@ func bookGuaranteedPreferredWorkshop(state *booking.ScheduleState, groups []*gro
 				continue
 			}
 
-			if booking.BookWorkshopIfAvailable(state, workshop, group) {
+			if booked, _ := booking.BookWorkshopIfAvailable(state, workshop, group); booked {
 				break
 			}
 		}
@@ -140,7 +140,7 @@ func bookPreferredWorkshops(state *booking.ScheduleState, groups []*groupPkg.Gro
 				continue
 			}
 
-			if booked := booking.BookWorkshopIfAvailable(state, workshop, group); booked {
+			if booked, _ := booking.BookWorkshopIfAvailable(state, workshop, group); booked {
 				sessionsToBook--
 				if sessionsToBook == 0 {
 					break
@@ -176,7 +176,7 @@ func bookRandomWorkshops(state *booking.ScheduleState, groupsNeedingBooking []*g
 
 func bookFromSortedWorkshops(state *booking.ScheduleState, group *groupPkg.Group, workshops []*workshopPkg.Workshop) bool {
 	for _, workshop := range workshops {
-		if booking.BookWorkshopIfAvailable(state, workshop, group) {
+		if booked, _ := booking.BookWorkshopIfAvailable(state, workshop, group); booked {
 			return true
 		}
 	}
