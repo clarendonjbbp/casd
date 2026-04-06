@@ -1,0 +1,27 @@
+{{define "results_sections.html.tmpl"}}
+<div class="results">
+    <div class="results-tabs" role="tablist" aria-label="Schedule views">
+        <button class="results-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="results-groups" id="tab-groups" data-tab-target="results-groups">Groups</button>
+        <button class="results-tab" type="button" role="tab" aria-selected="false" aria-controls="results-art" id="tab-art" data-tab-target="results-art">Art Workshops</button>
+        <button class="results-tab" type="button" role="tab" aria-selected="false" aria-controls="results-science" id="tab-science" data-tab-target="results-science">Science Workshops</button>
+    </div>
+
+    <section class="results-panel is-active" id="results-groups" role="tabpanel" aria-labelledby="tab-groups">
+        <div class="section-content">
+            {{template "groups.html.tmpl" .Groups}}
+        </div>
+    </section>
+
+    <section class="results-panel" id="results-art" role="tabpanel" aria-labelledby="tab-art" hidden>
+        <div class="section-content">
+            {{template "workshops.html.tmpl" .Art}}
+        </div>
+    </section>
+
+    <section class="results-panel" id="results-science" role="tabpanel" aria-labelledby="tab-science" hidden>
+        <div class="section-content">
+            {{template "workshops.html.tmpl" .Science}}
+        </div>
+    </section>
+</div>
+{{end}}

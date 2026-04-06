@@ -1,0 +1,13 @@
+{{define "workshops.txt.tmpl"}}{{range .Workshops}}ID: {{.ID}}  
+Name: {{.Name}}  
+Capacity per session: {{.Capacity}}  
+Overall utilization: {{.OverallUtilization}}%  
+Schedule  
+| Utilization | Students |
+| --------- | -------- |
+{{range .ScheduleRows}}{{if .Offered}}| {{.Utilization}}% | {{.Students}} |
+{{else}}| - | - |
+{{end}}{{end}}
+---
+
+{{end}}{{end}}
