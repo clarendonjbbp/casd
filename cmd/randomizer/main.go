@@ -109,8 +109,7 @@ func randomizeNames(inputFile, outputFile string) error {
 		if len(records[i]) > 4 {
 			studentNamesStr := records[i][4]
 			if studentNamesStr != "" {
-				// Split student names by comma
-				studentNames := strings.Split(studentNamesStr, ",")
+				studentNames := splitStudentNames(studentNamesStr)
 				var newStudentNames []string
 
 				for _, studentName := range studentNames {
@@ -165,4 +164,31 @@ func randomizeNames(inputFile, outputFile string) error {
 	}
 
 	return nil
+}
+
+func splitStudentNames(studentNames string) []string {
+	normalized := strings.ReplaceAll(studentNames, "\t", " ")
+
+	var rawNames []string
+	switch {
+	case strings.Contains(normalized, ";"):
+		rawNames = strings.Split(normalized, ";")
+	case strings.Contains(normalized, "\n"):
+		rawNames = strings.Split(normalized, "\n")
+	default:
+		rawNames = strings.Split(normalized, ",")
+	}
+
+	names := make([]string, 0, len(rawNames))
+	for _, name := range rawNames {
+		name = strings.TrimSpace(name)
+		name = strings.TrimPrefix(name, "and ")
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		names = append(names, name)
+	}
+
+	return names
 }
