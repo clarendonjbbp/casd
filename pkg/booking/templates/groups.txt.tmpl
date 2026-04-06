@@ -1,0 +1,17 @@
+{{define "groups.txt.tmpl"}}{{template "summary.txt.tmpl" .}}{{range .Groups}}Teacher = {{.Teacher}}  
+Grade = {{.Grade}}  
+ID = {{.ID}}  
+Satisfaction = {{.SatisfactionPercent}}%  
+Students = {{.Students}}  
+{{if .HasParentWorkshops}}Group contains child of presenter or assistant of workshop = {{.ParentWorkshops}}  
+{{end}}{{if .HasParentBookingIssue}}Unbooked parent workshops = {{.ParentBookingIssues}}  
+{{end}}Schedule
+| ID | Class | Room | Match |
+| -- | ----- | ---- | ----- |
+{{range .ScheduleRows}}{{if .Scheduled}}| {{.WorkshopID}} | {{.WorkshopName}} | {{.Room}} | {{.Match}} |
+{{else if .IsRecess}}| - | {{.Time}} | - | - |
+{{else}}| - | - | - | Not Scheduled |
+{{end}}{{end}}
+---
+
+{{end}}{{end}}

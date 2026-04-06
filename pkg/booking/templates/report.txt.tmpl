@@ -1,0 +1,12 @@
+{{define "report.txt.tmpl"}}# Community Arts and Sciences Day Assignments
+
+## Groups
+
+{{template "groups.txt.tmpl" .Groups}}
+## Art Workshops
+
+{{template "workshops.txt.tmpl" .Art}}
+## Science Workshops
+
+{{template "workshops.txt.tmpl" .Science}}
+{{end}}

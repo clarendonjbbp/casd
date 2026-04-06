@@ -1,0 +1,78 @@
+{{define "workshops.html.tmpl"}}
+<style>
+.workshop {
+    margin-bottom: 1.5em;
+    padding: 1.2em;
+    border: 1px solid rgba(36, 55, 76, 0.14);
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(244,250,255,0.95));
+    box-shadow: 0 14px 38px rgba(36, 55, 76, 0.1);
+}
+.workshop h3 {
+    margin-top: 0;
+    color: #141f26;
+    font-family: "Chewy", "Marker Felt", "Chalkboard SE", "Comic Sans MS", "Trebuchet MS", sans-serif;
+    font-size: 1.35rem;
+    text-transform: uppercase;
+}
+.schedule {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+}
+.schedule th, .schedule td {
+    padding: 10px 12px;
+    text-align: left;
+    border: 1px solid rgba(125, 138, 142, 0.2);
+}
+.schedule th {
+    background-color: #e9f4fd;
+    color: #1d4667;
+}
+.schedule .recess {
+    background-color: #eef7ec;
+    text-align: center;
+    font-style: italic;
+    color: #4a6c55;
+}
+.utilization.low { color: #b24a4a; font-weight: 700; }
+.utilization.high { color: #2f7a4b; font-weight: 700; }
+.students { color: #465963; }
+</style>
+
+{{range .Workshops}}
+<div class="workshop">
+    <h3>{{.Name}}</h3>
+    <p><strong>ID:</strong> {{.ID}}</p>
+    <p><strong>Capacity per session:</strong> {{.Capacity}}</p>
+    <p><strong>Overall utilization:</strong> {{.OverallUtilization}}%</p>
+    <table class="schedule">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Utilization</th>
+                <th>Students</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .ScheduleRows}}
+            <tr>
+                {{if .IsRecess}}
+                <td colspan="3" class="recess">{{.Time}}</td>
+                {{else}}
+                <td>{{.Time}}</td>
+                {{if .Offered}}
+                <td class="utilization {{.UtilizationClass}}">{{.Utilization}}%</td>
+                <td class="students">{{.Students}}</td>
+                {{else}}
+                <td>-</td>
+                <td>-</td>
+                {{end}}
+                {{end}}
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+{{end}}

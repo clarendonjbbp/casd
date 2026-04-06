@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 
@@ -34,12 +33,6 @@ func main() {
 	}
 
 	if *printOutput {
-		fmt.Printf("# Community Arts and Sciences Day Assignments  \n\n")
-		fmt.Printf("## Groups  \n\n")
-		booking.PrintGroups(os.Stdout, groups, state)
-		fmt.Printf("## Art Workshops \n\n")
-		booking.PrintWorkshops(os.Stdout, artWorkshops, state)
-		fmt.Printf("## Science Workshops  \n\n")
-		booking.PrintWorkshops(os.Stdout, sciWorkshops, state)
+		booking.PrintScheduleReport(os.Stdout, groups, artWorkshops, sciWorkshops, state)
 	}
 }
