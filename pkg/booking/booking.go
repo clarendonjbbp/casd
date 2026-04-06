@@ -184,7 +184,7 @@ func (s *ScheduleState) UtilizationWithoutGroup(workshop *workshopPkg.Workshop, 
 func (s *ScheduleState) OverallUtilization(workshop *workshopPkg.Workshop) int {
 	overallSpotsTaken := 0
 	overallCapacity := 0
-	for session := 0; session < model.NumSessions; session++ {
+	for session := range model.NumSessions {
 		if !workshop.IsSessionOffered(session) {
 			continue
 		}
@@ -199,7 +199,7 @@ func (s *ScheduleState) OverallUtilization(workshop *workshopPkg.Workshop) int {
 func (s *ScheduleState) AvailableSessions(workshop *workshopPkg.Workshop, group *groupPkg.Group) []int {
 	var availableSessions []int
 	maxRemainingSlots := 0
-	for session := 0; session < model.NumSessions; session++ {
+	for session := range model.NumSessions {
 		if s.SessionOccupied(group, session) {
 			continue
 		}
@@ -260,7 +260,7 @@ func GetUnderutilizedSessions(state *ScheduleState, minUtilization int, workshop
 
 	for _, id := range workshopIDs {
 		workshop := workshops[id]
-		for i := 0; i < model.NumSessions; i++ {
+		for i := range model.NumSessions {
 			if !workshop.IsSessionOffered(i) {
 				continue
 			}
@@ -332,7 +332,7 @@ func SessionSatisfactionPoints(group *groupPkg.Group, state *ScheduleState, sess
 func GetSatisfaction(group *groupPkg.Group, state *ScheduleState) int {
 	satisfaction := 0
 
-	for session := 0; session < model.NumSessions; session++ {
+	for session := range model.NumSessions {
 		if GetWorkshop(group, state, session) == nil {
 			return 0
 		}
@@ -410,7 +410,7 @@ func PreferenceRankForWorkshopID(group *groupPkg.Group, id string) int {
 func CountPreferredWorkshopsOfKind(group *groupPkg.Group, state *ScheduleState, kind int) int {
 	count := 0
 
-	for session := 0; session < model.NumSessions; session++ {
+	for session := range model.NumSessions {
 		workshop := GetWorkshop(group, state, session)
 		if workshop == nil || workshop.Kind != kind {
 			continue

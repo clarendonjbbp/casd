@@ -127,7 +127,7 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 func saveUploadedFile(r *http.Request, fieldName string) (string, error) {
 	file, header, err := r.FormFile(fieldName)
 	if err != nil {
-		return "", fmt.Errorf("error getting file: %v", err)
+		return "", fmt.Errorf("error getting file: %w", err)
 	}
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
@@ -139,7 +139,7 @@ func saveUploadedFile(r *http.Request, fieldName string) (string, error) {
 	tempFile := filepath.Join(uploadDir, header.Filename)
 	dst, err := os.Create(tempFile)
 	if err != nil {
-		return "", fmt.Errorf("error creating temp file: %v", err)
+		return "", fmt.Errorf("error creating temp file: %w", err)
 	}
 	defer func() {
 		if closeErr := dst.Close(); closeErr != nil {
@@ -149,7 +149,7 @@ func saveUploadedFile(r *http.Request, fieldName string) (string, error) {
 
 	// Copy file contents
 	if _, err := io.Copy(dst, file); err != nil {
-		return "", fmt.Errorf("error copying file: %v", err)
+		return "", fmt.Errorf("error copying file: %w", err)
 	}
 
 	return tempFile, nil

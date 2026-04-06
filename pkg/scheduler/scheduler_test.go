@@ -35,8 +35,8 @@ func TestReadCSVFilesLoadsRepositoryFixtures(t *testing.T) {
 func TestRebalanceWorkshopsMovesGroupIntoUnderutilizedSession(t *testing.T) {
 	group := testGroup("group-1", 3, 2, []string{"A9"}, nil)
 	filler := testGroup("filler", 3, 5, nil, nil)
-	oldWorkshop := testWorkshop("A1", model.ArtWorkshop, 3, 5, 10, []int{0, -1, -1, -1})
-	targetWorkshop := testWorkshop("A2", model.ArtWorkshop, 3, 5, 10, []int{8, -1, -1, -1})
+	oldWorkshop := testWorkshop("A1", model.ArtWorkshop, []int{0, -1, -1, -1})
+	targetWorkshop := testWorkshop("A2", model.ArtWorkshop, []int{8, -1, -1, -1})
 	state := booking.NewScheduleState([]*groupPkg.Group{group, filler}, map[string]*workshopPkg.Workshop{
 		oldWorkshop.ID:    oldWorkshop,
 		targetWorkshop.ID: targetWorkshop,
@@ -64,8 +64,8 @@ func TestRebalanceWorkshopsDoesNotBreakOnlyPreferredWorkshopGuarantee(t *testing
 	group := testGroup("group-1", 3, 2, []string{"A1", "", "", ""}, nil)
 	group2 := testGroup("group-2", 3, 2, nil, nil)
 	group3 := testGroup("group-3", 3, 2, nil, nil)
-	oldWorkshop := testWorkshop("A1", model.ArtWorkshop, 3, 5, 10, []int{4, -1, -1, -1})
-	targetWorkshop := testWorkshop("A2", model.ArtWorkshop, 3, 5, 10, []int{8, -1, -1, -1})
+	oldWorkshop := testWorkshop("A1", model.ArtWorkshop, []int{4, -1, -1, -1})
+	targetWorkshop := testWorkshop("A2", model.ArtWorkshop, []int{8, -1, -1, -1})
 	state := booking.NewScheduleState([]*groupPkg.Group{group, group2, group3}, map[string]*workshopPkg.Workshop{
 		oldWorkshop.ID:    oldWorkshop,
 		targetWorkshop.ID: targetWorkshop,
@@ -94,7 +94,7 @@ func TestBookParentClassesRecordsGradeMismatchIssue(t *testing.T) {
 
 	artWorkshops := map[string]*workshopPkg.Workshop{}
 	sciWorkshops := map[string]*workshopPkg.Workshop{
-		"S24": testWorkshop("S24", model.SciWorkshop, 3, 5, 10, []int{10, 10, 10, 10}),
+		"S24": testWorkshop("S24", model.SciWorkshop, []int{10, 10, 10, 10}),
 	}
 
 	err := bookParentClasses(state, []*groupPkg.Group{group}, artWorkshops, sciWorkshops, true)
@@ -108,12 +108,12 @@ func TestBookGuaranteedPreferredWorkshopBooksOnePreferredWorkshopPerKind(t *test
 	state := booking.NewScheduleState([]*groupPkg.Group{group})
 
 	artWorkshops := map[string]*workshopPkg.Workshop{
-		"A1": testWorkshop("A1", model.ArtWorkshop, 3, 5, 10, []int{10, 10, -1, -1}),
-		"A2": testWorkshop("A2", model.ArtWorkshop, 3, 5, 10, []int{10, 10, -1, -1}),
+		"A1": testWorkshop("A1", model.ArtWorkshop, []int{10, 10, -1, -1}),
+		"A2": testWorkshop("A2", model.ArtWorkshop, []int{10, 10, -1, -1}),
 	}
 	sciWorkshops := map[string]*workshopPkg.Workshop{
-		"S1": testWorkshop("S1", model.SciWorkshop, 3, 5, 10, []int{-1, -1, 10, 10}),
-		"S2": testWorkshop("S2", model.SciWorkshop, 3, 5, 10, []int{-1, -1, 10, 10}),
+		"S1": testWorkshop("S1", model.SciWorkshop, []int{-1, -1, 10, 10}),
+		"S2": testWorkshop("S2", model.SciWorkshop, []int{-1, -1, 10, 10}),
 	}
 
 	bookGuaranteedPreferredWorkshop(state, []*groupPkg.Group{group}, artWorkshops, model.ArtWorkshop)
@@ -144,7 +144,7 @@ func testGroup(id string, grade, students int, artIDs, sciIDs []string) *groupPk
 	}
 }
 
-func testWorkshop(id string, kind, minGrade, maxGrade, capacity int, spotsAvailable []int) *workshopPkg.Workshop {
+func testWorkshop(id string, kind int, spotsAvailable []int) *workshopPkg.Workshop {
 	offeredSessions := make([]bool, len(spotsAvailable))
 	for i, spots := range spotsAvailable {
 		offeredSessions[i] = spots != -1
@@ -154,9 +154,9 @@ func testWorkshop(id string, kind, minGrade, maxGrade, capacity int, spotsAvaila
 		Kind:            kind,
 		ID:              id,
 		Name:            id,
-		MinGrade:        minGrade,
-		MaxGrade:        maxGrade,
-		Capacity:        capacity,
+		MinGrade:        3,
+		MaxGrade:        5,
+		Capacity:        10,
 		OfferedSessions: offeredSessions,
 	}
 }

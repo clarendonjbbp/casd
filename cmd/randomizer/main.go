@@ -72,7 +72,7 @@ func randomizeNames(inputFile, outputFile string) error {
 	// Read the input file
 	file, err := os.Open(inputFile)
 	if err != nil {
-		return fmt.Errorf("error opening input file: %v", err)
+		return fmt.Errorf("error opening input file: %w", err)
 	}
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
@@ -84,7 +84,7 @@ func randomizeNames(inputFile, outputFile string) error {
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
-		return fmt.Errorf("error reading CSV: %v", err)
+		return fmt.Errorf("error reading CSV: %w", err)
 	}
 
 	// Create maps to maintain consistent name replacements
@@ -139,7 +139,7 @@ func randomizeNames(inputFile, outputFile string) error {
 	// Create output file
 	outFile, err := os.Create(outputFile)
 	if err != nil {
-		return fmt.Errorf("error creating output file: %v", err)
+		return fmt.Errorf("error creating output file: %w", err)
 	}
 	defer func() {
 		if closeErr := outFile.Close(); closeErr != nil {
@@ -151,7 +151,7 @@ func randomizeNames(inputFile, outputFile string) error {
 	writer := csv.NewWriter(outFile)
 	err = writer.WriteAll(records)
 	if err != nil {
-		return fmt.Errorf("error writing CSV: %v", err)
+		return fmt.Errorf("error writing CSV: %w", err)
 	}
 
 	fmt.Printf("Successfully created %s with randomized names\n\n", outputFile)
