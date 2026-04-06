@@ -19,6 +19,7 @@ type Group struct {
 	ParentIDs           map[string]struct{}
 	ParentBookingIssues map[string]string
 	Teacher             string
+	Room                string
 	Name                string
 	Grade               int
 	Students            []string
@@ -31,6 +32,7 @@ var workshopIDPattern = regexp.MustCompile(`(?i)^\s*([AS]\d+)\b`)
 
 func ReadGroups(file string) ([]*Group, error) {
 	var groups []*Group
+	idCounts := make(map[string]int)
 
 	reader, err := readAndParseCSV(file)
 	if err != nil {
@@ -47,6 +49,7 @@ func ReadGroups(file string) ([]*Group, error) {
 		}
 
 		teacher := strings.TrimSpace(record[0])
+		room := strings.TrimSpace(record[1])
 
 		grade, err := getGrade(record[2])
 		if err != nil {
@@ -65,8 +68,16 @@ func ReadGroups(file string) ([]*Group, error) {
 			parentIDs[parentID] = struct{}{}
 		}
 
+		baseID := formatGroupID(teacher, grade, name)
+		idCounts[baseID]++
+		id := baseID
+		if idCounts[baseID] > 1 {
+			id = fmt.Sprintf("%s-%d", baseID, idCounts[baseID])
+		}
+
 		groups = append(groups, &Group{
 			Teacher:             teacher,
+			Room:                room,
 			Grade:               grade,
 			Name:                name,
 			Students:            strings.Split(record[4], ","),
@@ -74,7 +85,7 @@ func ReadGroups(file string) ([]*Group, error) {
 			SciIDs:              sciIDs,
 			ParentIDs:           parentIDs,
 			ParentBookingIssues: make(map[string]string),
-			ID:                  fmt.Sprintf("%s-%d-%s", strings.ReplaceAll(teacher, " ", "_"), grade, strings.ReplaceAll(name, " ", "_")),
+			ID:                  id,
 		})
 	}
 
@@ -120,6 +131,10 @@ func normalizePreferences(preferences []string) []string {
 	}
 
 	return normalized
+}
+
+func formatGroupID(teacher string, grade int, name string) string {
+	return fmt.Sprintf("%s-%d-%s", strings.ReplaceAll(teacher, " ", "_"), grade, strings.ReplaceAll(name, " ", "_"))
 }
 
 func normalizeParentIDs(raw string) []string {

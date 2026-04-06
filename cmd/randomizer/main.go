@@ -89,6 +89,7 @@ func randomizeNames(inputFile, outputFile string) error {
 
 	// Create maps to maintain consistent name replacements
 	teacherMap := make(map[string]string)
+	usedTeacherNames := make(map[string]struct{})
 	studentMap := make(map[string]nameMapping)
 
 	// Process each row
@@ -99,8 +100,9 @@ func randomizeNames(inputFile, outputFile string) error {
 			if replacement, exists := teacherMap[originalTeacherName]; exists {
 				records[i][0] = replacement
 			} else {
-				newName := teacherFirstNames[rand.Intn(len(teacherFirstNames))]
+				newName := uniqueTeacherReplacement(usedTeacherNames)
 				teacherMap[originalTeacherName] = newName
+				usedTeacherNames[newName] = struct{}{}
 				records[i][0] = newName
 			}
 		}
@@ -164,6 +166,27 @@ func randomizeNames(inputFile, outputFile string) error {
 	}
 
 	return nil
+}
+
+func uniqueTeacherReplacement(used map[string]struct{}) string {
+	if len(used) < len(teacherFirstNames) {
+		for {
+			name := teacherFirstNames[rand.Intn(len(teacherFirstNames))]
+			if _, exists := used[name]; exists {
+				continue
+			}
+			return name
+		}
+	}
+
+	for suffix := 2; ; suffix++ {
+		for _, base := range teacherFirstNames {
+			name := fmt.Sprintf("%s%d", base, suffix)
+			if _, exists := used[name]; !exists {
+				return name
+			}
+		}
+	}
 }
 
 func splitStudentNames(studentNames string) []string {

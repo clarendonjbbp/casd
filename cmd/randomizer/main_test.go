@@ -33,3 +33,20 @@ func TestSplitStudentNamesNormalizesTabsAndLeadingAnd(t *testing.T) {
 		splitStudentNames("Alice\tSmith, Bob Jones, and Cara Brown"),
 	)
 }
+
+func TestUniqueTeacherReplacementDoesNotReuseNames(t *testing.T) {
+	used := map[string]struct{}{
+		"Emma": {},
+		"Liam": {},
+	}
+
+	first := uniqueTeacherReplacement(used)
+	used[first] = struct{}{}
+	second := uniqueTeacherReplacement(used)
+
+	assert.NotEqual(t, first, second)
+	assert.NotEqual(t, "Emma", first)
+	assert.NotEqual(t, "Liam", first)
+	assert.NotEqual(t, "Emma", second)
+	assert.NotEqual(t, "Liam", second)
+}
