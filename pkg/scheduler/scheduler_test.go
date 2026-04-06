@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"path/filepath"
-	"slices"
 	"testing"
 
 	"github.com/clarendonjbbp/casd/pkg/booking"
@@ -28,11 +27,9 @@ func TestReadCSVFilesLoadsRepositoryFixtures(t *testing.T) {
 	assert.Equal(t, "Michael", groups[0].Teacher)
 	assert.Equal(t, 4, groups[0].Grade)
 	assert.Equal(t, "Group 1", groups[0].Name)
-	assert.True(t, slices.Equal(groups[0].ArtIDs, []string{"A5", "A7", "A12", "A18"}))
-	_, ok := artWorkshops["A5"]
-	assert.True(t, ok)
-	_, ok = sciWorkshops["S23"]
-	assert.True(t, ok)
+	assert.Equal(t, []string{"A5", "A7", "A12", "A18"}, groups[0].ArtIDs)
+	assert.Contains(t, artWorkshops, "A5")
+	assert.Contains(t, sciWorkshops, "S23")
 }
 
 func TestRebalanceWorkshopsMovesGroupIntoUnderutilizedSession(t *testing.T) {
