@@ -2,6 +2,7 @@ package group
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -41,7 +42,7 @@ func ReadGroups(file string) ([]*Group, error) {
 
 	for {
 		record, err := reader.Read()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -186,8 +187,8 @@ func readAndParseCSV(file string) (*csv.Reader, error) {
 
 	reader := csv.NewReader(csvFile)
 	_, err = reader.Read()
-	if err == io.EOF {
-		return nil, fmt.Errorf("empty csv file: %v", err)
+	if errors.Is(err, io.EOF) {
+		return nil, fmt.Errorf("empty csv file: %w", err)
 	}
 	if err != nil {
 		return nil, err

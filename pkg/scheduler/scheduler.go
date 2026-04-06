@@ -22,17 +22,17 @@ type ScheduleOptions struct {
 func ReadCSVFiles(groupsFile, artWorkshopsFile, sciWorkshopsFile string) ([]*groupPkg.Group, map[string]*workshopPkg.Workshop, map[string]*workshopPkg.Workshop, error) {
 	groups, err := groupPkg.ReadGroups(groupsFile)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("couldn't read groups: %v", err)
+		return nil, nil, nil, fmt.Errorf("couldn't read groups: %w", err)
 	}
 
 	artWorkshops, err := workshopPkg.ReadWorkshops(artWorkshopsFile, model.ArtWorkshop)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("couldn't read art workshop: %v", err)
+		return nil, nil, nil, fmt.Errorf("couldn't read art workshop: %w", err)
 	}
 
 	sciWorkshops, err := workshopPkg.ReadWorkshops(sciWorkshopsFile, model.SciWorkshop)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("couldn't read science workshop: %v", err)
+		return nil, nil, nil, fmt.Errorf("couldn't read science workshop: %w", err)
 	}
 
 	return groups, artWorkshops, sciWorkshops, nil
@@ -128,7 +128,10 @@ func bookPreferredWorkshops(state *booking.ScheduleState, groups []*groupPkg.Gro
 	var needsRandomBooking []*groupPkg.Group
 
 	for _, group := range groups {
-		sessionsToBook := sessionsRequired(kind) - state.SessionsBooked(group, kind)
+		sessionsToBook := model.NumSciSessions - state.SessionsBooked(group, kind)
+		if kind == model.ArtWorkshop {
+			sessionsToBook = model.NumArtSessions - state.SessionsBooked(group, kind)
+		}
 		if sessionsToBook < 1 {
 			continue
 		}
@@ -148,7 +151,7 @@ func bookPreferredWorkshops(state *booking.ScheduleState, groups []*groupPkg.Gro
 			}
 		}
 
-		for i := 0; i < sessionsToBook; i++ {
+		for range sessionsToBook {
 			needsRandomBooking = append(needsRandomBooking, group)
 		}
 	}
@@ -256,13 +259,6 @@ func shuffleGroups(groups []*groupPkg.Group) {
 		groups[n-1], groups[randIndex] = groups[randIndex], groups[n-1]
 		groups = groups[:n-1]
 	}
-}
-
-func sessionsRequired(kind int) int {
-	if kind == model.ArtWorkshop {
-		return model.NumArtSessions
-	}
-	return model.NumSciSessions
 }
 
 func preferencesForKind(group *groupPkg.Group, kind int) []string {
