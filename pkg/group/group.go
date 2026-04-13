@@ -31,6 +31,19 @@ type Group struct {
 
 var workshopIDPattern = regexp.MustCompile(`(?i)^\s*([AS]\d+)\b`)
 
+const (
+	teacherColumn = iota
+	roomColumn
+	gradeColumn
+	groupNameColumn
+	studentsColumn
+	artPreferencesStartColumn
+	artPreferencesEndColumn       = artPreferencesStartColumn + 4
+	sciencePreferencesStartColumn = artPreferencesEndColumn
+	sciencePreferencesEndColumn   = sciencePreferencesStartColumn + 4
+	parentWorkshopsColumn         = sciencePreferencesEndColumn
+)
+
 func ReadGroups(file string) ([]*Group, error) {
 	var groups []*Group
 	idCounts := make(map[string]int)
@@ -49,20 +62,20 @@ func ReadGroups(file string) ([]*Group, error) {
 			return nil, err
 		}
 
-		teacher := strings.TrimSpace(record[0])
-		room := strings.TrimSpace(record[1])
+		teacher := strings.TrimSpace(record[teacherColumn])
+		room := strings.TrimSpace(record[roomColumn])
 
-		grade, err := getGrade(record[2])
+		grade, err := getGrade(record[gradeColumn])
 		if err != nil {
-			return nil, fmt.Errorf("invalid Grade %s for teacher %s: %w", record[2], teacher, err)
+			return nil, fmt.Errorf("invalid Grade %s for teacher %s: %w", record[gradeColumn], teacher, err)
 		}
 
-		name := record[3]
-		artIDs := normalizePreferences(record[5:9])
-		sciIDs := normalizePreferences(record[9:13])
+		name := record[groupNameColumn]
+		artIDs := normalizePreferences(record[artPreferencesStartColumn:artPreferencesEndColumn])
+		sciIDs := normalizePreferences(record[sciencePreferencesStartColumn:sciencePreferencesEndColumn])
 
 		parentIDs := make(map[string]struct{})
-		for _, parentID := range normalizeParentIDs(record[13]) {
+		for _, parentID := range normalizeParentIDs(record[parentWorkshopsColumn]) {
 			if parentID == "0" || parentID == "" {
 				continue
 			}
@@ -81,7 +94,7 @@ func ReadGroups(file string) ([]*Group, error) {
 			Room:                room,
 			Grade:               grade,
 			Name:                name,
-			Students:            strings.Split(record[4], ","),
+			Students:            strings.Split(record[studentsColumn], ","),
 			ArtIDs:              artIDs,
 			SciIDs:              sciIDs,
 			ParentIDs:           parentIDs,

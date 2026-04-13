@@ -25,6 +25,17 @@ type Workshop struct {
 	Room            string
 }
 
+const (
+	nameColumn = iota
+	gradesColumn
+	session1Column
+	session2Column
+	session3Column
+	session4Column
+	capacityColumn
+	roomColumn
+)
+
 func ReadWorkshops(file string, kind int) (map[string]*Workshop, error) {
 	workshops := make(map[string]*Workshop)
 
@@ -42,14 +53,14 @@ func ReadWorkshops(file string, kind int) (map[string]*Workshop, error) {
 			return nil, err
 		}
 
-		id, name, found := strings.Cut(record[0], "-")
+		id, name, found := strings.Cut(record[nameColumn], "-")
 		if !found {
-			return nil, fmt.Errorf("invalid workshop name %q", record[0])
+			return nil, fmt.Errorf("invalid workshop name %q", record[nameColumn])
 		}
 		id = strings.TrimSpace(id)
 		name = strings.TrimSpace(name)
 
-		grades := strings.Split(record[1], "-")
+		grades := strings.Split(record[gradesColumn], "-")
 		minGrade, err := getGrade(grades[0])
 		if err != nil {
 			return nil, err
@@ -59,16 +70,16 @@ func ReadWorkshops(file string, kind int) (map[string]*Workshop, error) {
 			return nil, err
 		}
 
-		capacity, err := strconv.Atoi(record[6])
+		capacity, err := strconv.Atoi(record[capacityColumn])
 		if err != nil {
 			return nil, err
 		}
 
 		offeredSessions := make([]bool, 4)
 		var sessionsOffered int
-		for i := 2; i < 6; i++ {
+		for i := session1Column; i <= session4Column; i++ {
 			if strings.ToLower(record[i]) == "y" {
-				offeredSessions[i-2] = true
+				offeredSessions[i-session1Column] = true
 				sessionsOffered++
 			}
 		}
@@ -82,7 +93,7 @@ func ReadWorkshops(file string, kind int) (map[string]*Workshop, error) {
 			Capacity:        capacity,
 			OfferedSessions: offeredSessions,
 			SessionsOffered: sessionsOffered,
-			Room:            record[7],
+			Room:            record[roomColumn],
 		}
 	}
 
