@@ -27,6 +27,7 @@ var pageTemplates = template.Must(template.ParseFS(templateFS, "templates/*.html
 type resultsPageData struct {
 	Logs           string
 	Output         template.HTML
+	PrintOutput    template.HTML
 	Random         bool
 	MinUtilization int
 }
@@ -116,9 +117,13 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	var output bytes.Buffer
 	booking.PrintResultsHTML(&output, groups, artWorkshops, sciWorkshops, state)
 
+	var printOutput bytes.Buffer
+	booking.PrintFriendlyResultsHTML(&printOutput, groups, state)
+
 	renderTemplate(w, "results.html", resultsPageData{
 		Logs:           buf.String(),
 		Output:         template.HTML(output.String()),
+		PrintOutput:    template.HTML(printOutput.String()),
 		Random:         random,
 		MinUtilization: minUtilization,
 	})

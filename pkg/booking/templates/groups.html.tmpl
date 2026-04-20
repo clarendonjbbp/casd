@@ -95,9 +95,11 @@
 }
 </style>
 
+{{if .ShowSummary}}
 <div class="schedule-summary">
     <h3>Schedule Summary</h3>
     <div class="schedule-summary-grid">
+        {{if .ShowScoring}}
         <div class="schedule-summary-card">
             <span class="label">Overall Satisfaction Points</span>
             <span class="value">{{.Summary.OverallSatisfactionPoints}}</span>
@@ -106,6 +108,7 @@
             <span class="label">Average Satisfaction</span>
             <span class="value">{{.Summary.AverageSatisfactionPercent}}%</span>
         </div>
+        {{end}}
         <div class="schedule-summary-card">
             <span class="label">Groups With Preferred Art</span>
             <span class="value">{{.Summary.GroupsWithPreferredArt}} / {{.Summary.TotalGroups}}</span>
@@ -116,6 +119,7 @@
         </div>
     </div>
 </div>
+{{end}}
 
 {{range .Groups}}
 <div class="group">
@@ -124,7 +128,9 @@
         <p><strong>Teacher:</strong> {{.Teacher}}</p>
         <p><strong>Grade:</strong> {{.Grade}}</p>
         <p><strong>Students:</strong> {{.Students}}</p>
+        {{if $.ShowScoring}}
         <p><strong>Satisfaction:</strong> {{.SatisfactionPercent}}%</p>
+        {{end}}
         {{if .HasParentWorkshops}}<p><strong>Parent Workshops:</strong> {{.ParentWorkshops}}</p>{{end}}
         {{if .HasParentBookingIssue}}<p><strong>Unbooked Parent Workshops:</strong> {{.ParentBookingIssues}}</p>{{end}}
     </div>
@@ -136,23 +142,27 @@
                 <th>Workshop ID</th>
                 <th>Workshop Name</th>
                 <th>Room</th>
+                {{if $.ShowScoring}}
                 <th>Match</th>
+                {{end}}
             </tr>
         </thead>
         <tbody>
             {{range .ScheduleRows}}
             <tr>
                 {{if .IsRecess}}
-                <td colspan="5" class="recess">{{.Time}}</td>
+                <td colspan="{{if $.ShowScoring}}5{{else}}4{{end}}" class="recess">{{.Time}}</td>
                 {{else}}
                 <td>{{.Time}}</td>
                 {{if .Scheduled}}
                 <td>{{.WorkshopID}}</td>
                 <td>{{.WorkshopName}}</td>
                 <td>{{.Room}}</td>
+                {{if $.ShowScoring}}
                 <td>{{.Match}}</td>
+                {{end}}
                 {{else}}
-                <td colspan="4" class="unfilled">Not Scheduled</td>
+                <td colspan="{{if $.ShowScoring}}4{{else}}3{{end}}" class="unfilled">Not Scheduled</td>
                 {{end}}
                 {{end}}
             </tr>
