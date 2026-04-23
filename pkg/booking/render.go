@@ -70,8 +70,10 @@ type workshopView struct {
 }
 
 type groupsSectionView struct {
-	Summary scheduleSummaryView
-	Groups  []groupView
+	Summary     scheduleSummaryView
+	Groups      []groupView
+	ShowScoring bool
+	ShowSummary bool
 }
 
 type workshopsSectionView struct {
@@ -92,7 +94,7 @@ type cliReportView struct {
 
 func PrintScheduleReport(w io.Writer, groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*workshopPkg.Workshop, state *ScheduleState) {
 	view := cliReportView{
-		Groups:  buildGroupsSectionView(groups, state),
+		Groups:  buildGroupsSectionView(groups, state, true, true),
 		Art:     buildWorkshopsSectionView(artWorkshops, state),
 		Science: buildWorkshopsSectionView(sciWorkshops, state),
 	}
@@ -100,11 +102,11 @@ func PrintScheduleReport(w io.Writer, groups []*groupPkg.Group, artWorkshops, sc
 }
 
 func PrintScheduleSummary(w io.Writer, groups []*groupPkg.Group, state *ScheduleState) {
-	executeTextTemplate(w, "summary.txt.tmpl", buildGroupsSectionView(groups, state))
+	executeTextTemplate(w, "summary.txt.tmpl", buildGroupsSectionView(groups, state, true, true))
 }
 
 func PrintGroups(w io.Writer, groups []*groupPkg.Group, state *ScheduleState) {
-	executeTextTemplate(w, "groups.txt.tmpl", buildGroupsSectionView(groups, state))
+	executeTextTemplate(w, "groups.txt.tmpl", buildGroupsSectionView(groups, state, true, true))
 }
 
 func PrintWorkshops(w io.Writer, workshops map[string]*workshopPkg.Workshop, state *ScheduleState) {
@@ -113,22 +115,26 @@ func PrintWorkshops(w io.Writer, workshops map[string]*workshopPkg.Workshop, sta
 
 func PrintResultsHTML(w io.Writer, groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*workshopPkg.Workshop, state *ScheduleState) {
 	view := resultsHTMLView{
-		Groups:  buildGroupsSectionView(groups, state),
+		Groups:  buildGroupsSectionView(groups, state, true, true),
 		Art:     buildWorkshopsSectionView(artWorkshops, state),
 		Science: buildWorkshopsSectionView(sciWorkshops, state),
 	}
 	executeHTMLTemplate(w, "results_sections.html.tmpl", view)
 }
 
+func PrintFriendlyResultsHTML(w io.Writer, groups []*groupPkg.Group, state *ScheduleState) {
+	executeHTMLTemplate(w, "groups.html.tmpl", buildGroupsSectionView(groups, state, false, false))
+}
+
 func PrintGroupsHTML(w io.Writer, groups []*groupPkg.Group, state *ScheduleState) {
-	executeHTMLTemplate(w, "groups.html.tmpl", buildGroupsSectionView(groups, state))
+	executeHTMLTemplate(w, "groups.html.tmpl", buildGroupsSectionView(groups, state, true, true))
 }
 
 func PrintWorkshopsHTML(w io.Writer, workshops map[string]*workshopPkg.Workshop, state *ScheduleState) {
 	executeHTMLTemplate(w, "workshops.html.tmpl", buildWorkshopsSectionView(workshops, state))
 }
 
-func buildGroupsSectionView(groups []*groupPkg.Group, state *ScheduleState) groupsSectionView {
+func buildGroupsSectionView(groups []*groupPkg.Group, state *ScheduleState, showScoring, showSummary bool) groupsSectionView {
 	sortedGroups := append([]*groupPkg.Group(nil), groups...)
 	sort.Slice(sortedGroups, func(i, j int) bool {
 		return sortedGroups[i].ID < sortedGroups[j].ID
@@ -141,8 +147,10 @@ func buildGroupsSectionView(groups []*groupPkg.Group, state *ScheduleState) grou
 
 	summary := CalculateScheduleSummary(groups, state)
 	return groupsSectionView{
-		Summary: scheduleSummaryView(summary),
-		Groups:  groupViews,
+		Summary:     scheduleSummaryView(summary),
+		Groups:      groupViews,
+		ShowScoring: showScoring,
+		ShowSummary: showSummary,
 	}
 }
 

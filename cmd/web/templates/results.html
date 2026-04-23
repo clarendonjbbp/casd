@@ -115,6 +115,34 @@
             letter-spacing: 0.08em;
             text-transform: uppercase;
         }
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .print-button {
+            appearance: none;
+            border: 1px solid rgba(61, 145, 80, 0.28);
+            border-radius: 999px;
+            padding: 12px 18px;
+            background: linear-gradient(180deg, rgba(87, 184, 102, 0.96), rgba(61, 145, 80, 0.98));
+            color: white;
+            cursor: pointer;
+            font-family: "Montserrat", "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            box-shadow: 0 10px 24px rgba(61, 145, 80, 0.22);
+        }
+        .print-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 28px rgba(61, 145, 80, 0.28);
+        }
+        .print-only {
+            display: none;
+        }
         .summary {
             margin: 22px 0;
             padding: 24px 28px;
@@ -223,42 +251,130 @@
                 padding-right: 18px;
             }
         }
+        @media print {
+            @page {
+                margin: 0.45in;
+            }
+            body {
+                padding: 0;
+                background: white;
+                color: #111;
+            }
+            .page::before,
+            .screen-only {
+                display: none !important;
+            }
+            .page {
+                max-width: none;
+                margin: 0;
+            }
+            .print-only {
+                display: block;
+            }
+            .print-heading {
+                margin: 0 0 18px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #111;
+            }
+            .print-heading h1 {
+                margin: 0;
+                font-family: "Montserrat", "Avenir Next", "Trebuchet MS", sans-serif;
+                font-size: 20pt;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+            }
+            .print-heading p {
+                margin: 6px 0 0;
+                color: #333;
+            }
+            .print-only .group {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                margin: 0 0 16px;
+                padding: 12px;
+                border: 1px solid #bbb;
+                border-radius: 0;
+                background: white;
+                box-shadow: none;
+            }
+            .print-only .group h3 {
+                color: #111;
+                font-family: "Montserrat", "Avenir Next", "Trebuchet MS", sans-serif;
+                font-size: 13pt;
+                border-bottom: 1px solid #bbb;
+            }
+            .print-only .group-details {
+                display: block;
+                margin: 8px 0;
+            }
+            .print-only .group-details p {
+                color: #111;
+                margin: 2px 0;
+            }
+            .print-only .schedule {
+                border-radius: 0;
+                font-size: 9.5pt;
+            }
+            .print-only .schedule th,
+            .print-only .schedule td {
+                padding: 5px 6px;
+                border-color: #bbb;
+            }
+            .print-only .schedule th,
+            .print-only .schedule .recess {
+                background: #f1f1f1;
+                color: #111;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="page">
-        <div class="back-link">
+        <div class="screen-only back-link">
             <a href="/">← Back to Upload</a>
         </div>
 
-        <section class="hero">
+        <section class="screen-only hero">
             <div>
                 <div class="eyebrow">Schedule Ready</div>
                 <h1>Community Arts &amp; Sciences Day Plan</h1>
                 <p>Your scheduling run is complete. Review group assignments, workshop rosters, and balancing notes below before sharing the day-of plan with teachers and volunteers.</p>
             </div>
+            <div class="hero-actions">
+                <button class="print-button" type="button" data-print-button>Print / Save PDF</button>
+            </div>
         </section>
 
-        {{.Output}}
+        <main class="screen-only">
+            {{.Output}}
 
-        <div class="summary">
-            <h3>Run Summary</h3>
-            <ul class="summary-list">
-                <li>
-                    <span class="summary-label">Randomization</span>
-                    <span class="summary-value">{{if .Random}}Enabled{{else}}Disabled{{end}}</span>
-                </li>
-                <li>
-                    <span class="summary-label">Minimum Utilization</span>
-                    <span class="summary-value">{{.MinUtilization}}%</span>
-                </li>
-            </ul>
-        </div>
+            <div class="summary">
+                <h3>Run Summary</h3>
+                <ul class="summary-list">
+                    <li>
+                        <span class="summary-label">Randomization</span>
+                        <span class="summary-value">{{if .Random}}Enabled{{else}}Disabled{{end}}</span>
+                    </li>
+                    <li>
+                        <span class="summary-label">Minimum Utilization</span>
+                        <span class="summary-value">{{.MinUtilization}}%</span>
+                    </li>
+                </ul>
+            </div>
 
-        <div class="logs">
-            <h2>Processing Logs</h2>
-            <pre>{{.Logs}}</pre>
-        </div>
+            <div class="logs">
+                <h2>Processing Logs</h2>
+                <pre>{{.Logs}}</pre>
+            </div>
+        </main>
+
+        <section class="print-only" aria-label="Print-friendly group schedules">
+            <div class="print-heading">
+                <h1>Clarendon Community Arts &amp; Sciences Day</h1>
+                <p>Group schedules for printing. Match and satisfaction details are intentionally hidden.</p>
+            </div>
+            {{.PrintOutput}}
+        </section>
     </div>
 </body>
 <script>
@@ -283,6 +399,11 @@
         tabs.forEach((tab) => {
             tab.addEventListener('click', () => activateTab(tab.dataset.tabTarget));
         });
+
+        const printButton = document.querySelector('[data-print-button]');
+        if (printButton) {
+            printButton.addEventListener('click', () => window.print());
+        }
     })();
 </script>
 </html>
