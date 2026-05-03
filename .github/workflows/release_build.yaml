@@ -62,79 +62,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Bump version tag
+      - name: Bump and write version tag
         id: bump
-        env:
-          VERSION_BUMP: ${{ github.event_name == 'workflow_dispatch' && inputs.version_bump || '' }}
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message || '' }}
-          COMMITS_JSON: ${{ toJson(github.event.commits) }}
-        run: |
-          # Get latest tag
-          LATEST_TAG=$(git describe --tags --abbrev=0 | sed 's/^v//')
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_TAG"
+        uses: faisal-memon/semver-bump-action@v0.0.2
+        with:
+          version-bump: ${{ github.event_name == 'workflow_dispatch' && inputs.version_bump || '' }}
+          commit-message: ${{ github.event.head_commit.message || '' }}
+          commits-json: ${{ toJson(github.event.commits) }}
+          write-tag: "true"
 
-          if [ -z "$VERSION_BUMP" ]; then
-            PUSH_MESSAGES="$COMMIT_MESSAGE"
-
-            if [ -n "$COMMITS_JSON" ] && command -v jq >/dev/null 2>&1; then
-              EXTRA_MESSAGES=$(printf '%s' "$COMMITS_JSON" | jq -r '.[].message // empty')
-              PUSH_MESSAGES=$(printf '%s\n%s' "$PUSH_MESSAGES" "$EXTRA_MESSAGES")
-            fi
-
-            case "$PUSH_MESSAGES" in
-              *"[major]"*|*"#major"*)
-                VERSION_BUMP=major
-                ;;
-              *"[minor]"*|*"#minor"*)
-                VERSION_BUMP=minor
-                ;;
-              *"[patch]"*|*"#patch"*)
-                VERSION_BUMP=patch
-                ;;
-              *)
-                VERSION_BUMP=patch
-                ;;
-            esac
-          fi
-
-          case "$VERSION_BUMP" in
-            major)
-              MAJOR=$((MAJOR + 1))
-              MINOR=0
-              PATCH=0
-              ;;
-            minor)
-              MINOR=$((MINOR + 1))
-              PATCH=0
-              ;;
-            patch)
-              PATCH=$((PATCH + 1))
-              ;;
-            *)
-              echo "Unsupported version bump: $VERSION_BUMP"
-              exit 1
-              ;;
-          esac
-
-          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
-          echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Create Git tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ steps.bump.outputs.new_tag }}
-          git push origin ${{ steps.bump.outputs.new_tag }}
-   
       - name: Build Docker image
         run: |
-          TAG=${{ steps.bump.outputs.new_tag }} make docker-push
+          TAG=${{ steps.bump.outputs.new-tag }} make docker-push
           TAG=latest make docker-push
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ steps.bump.outputs.new_tag }}
+          tag_name: ${{ steps.bump.outputs.new-tag }}
           files: |
             sorter
             sorter-web
