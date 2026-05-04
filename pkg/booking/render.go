@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"sort"
-	"strconv"
 	"strings"
 	texttmpl "text/template"
 
@@ -258,10 +257,7 @@ func buildWorkshopView(workshop *workshopPkg.Workshop, state *ScheduleState) wor
 }
 
 func gradeLabel(grade int) string {
-	if grade == 0 {
-		return "K"
-	}
-	return strconv.Itoa(grade)
+	return model.GradeLabel(grade)
 }
 
 func utilizationClass(utilization int) string {

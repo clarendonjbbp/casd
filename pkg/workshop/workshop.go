@@ -11,6 +11,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/clarendonjbbp/casd/pkg/model"
 )
 
 type Workshop struct {
@@ -144,13 +146,5 @@ func readAndParseCSV(file string) (*csv.Reader, error) {
 }
 
 func getGrade(grade string) (int, error) {
-	if strings.ToLower(grade) == "k" {
-		return 0, nil
-	}
-
-	if grade == "4/5" {
-		return 4, nil
-	}
-
-	return strconv.Atoi(grade)
+	return model.ParseGrade(grade)
 }
