@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/clarendonjbbp/casd/pkg/model"
@@ -148,7 +147,14 @@ func normalizePreferences(preferences []string) []string {
 }
 
 func formatGroupID(teacher string, grade int, name string) string {
-	return fmt.Sprintf("%s-%d-%s", strings.ReplaceAll(teacher, " ", "_"), grade, strings.ReplaceAll(name, " ", "_"))
+	return fmt.Sprintf("%s-%s-%s", strings.ReplaceAll(teacher, " ", "_"), gradeIDComponent(grade), strings.ReplaceAll(name, " ", "_"))
+}
+
+func gradeIDComponent(grade int) string {
+	if grade == model.TKGrade {
+		return "TK"
+	}
+	return fmt.Sprintf("%d", grade)
 }
 
 func normalizeParentIDs(raw string) []string {
@@ -211,13 +217,5 @@ func readAndParseCSV(file string) (*csv.Reader, error) {
 }
 
 func getGrade(grade string) (int, error) {
-	if strings.ToLower(grade) == "k" {
-		return 0, nil
-	}
-
-	if grade == "4/5" {
-		return 4, nil
-	}
-
-	return strconv.Atoi(grade)
+	return model.ParseGrade(grade)
 }
