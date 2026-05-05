@@ -416,7 +416,7 @@ func CountPreferredWorkshopsOfKind(group *groupPkg.Group, state *ScheduleState, 
 			continue
 		}
 
-		preferenceRank := HowPreferredIsBookedWorkshop(group, state, session)
+		preferenceRank := PreferenceRankForWorkshopID(group, workshop.ID)
 		if preferenceRank >= 1 && preferenceRank <= 4 {
 			count++
 		}
