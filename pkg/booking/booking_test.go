@@ -141,6 +141,15 @@ func TestCalculateScheduleSummary(t *testing.T) {
 	assert.Equal(t, 2, summary.TotalGroups)
 }
 
+func TestCountPreferredWorkshopsOfKindCountsParentWorkshopWhenItWasRequested(t *testing.T) {
+	group := testGroup("group-1", 3, 4, []string{"A1", "A2", "A3", "A4"}, nil)
+	group.ParentIDs["A1"] = struct{}{}
+	state := NewScheduleState([]*groupPkg.Group{group})
+	state.Book(group, testWorkshop("A1", model.ArtWorkshop, 3, 5, 10, []int{10, -1, -1, -1}), 0)
+
+	assert.Equal(t, 1, CountPreferredWorkshopsOfKind(group, state, model.ArtWorkshop))
+}
+
 func testGroup(id string, grade, students int, artIDs, sciIDs []string) *groupPkg.Group {
 	studentNames := make([]string, students)
 	for i := range studentNames {
