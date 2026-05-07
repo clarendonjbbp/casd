@@ -25,11 +25,16 @@ var templateFS embed.FS
 var pageTemplates = template.Must(template.ParseFS(templateFS, "templates/*.html"))
 
 type resultsPageData struct {
-	Logs           string
-	Output         template.HTML
-	PrintOutput    template.HTML
-	Random         bool
-	MinUtilization int
+	Logs            string
+	Output          template.HTML
+	PrintOutput     template.HTML
+	Random          bool
+	RandomRuns      int
+	RandomSeed      int64
+	SelectedRun     int
+	SelectedSeed    int64
+	HasSelectedSeed bool
+	MinUtilization  int
 }
 
 func main() {
@@ -86,11 +91,28 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	defer removeUploadedFile(scienceFile)
 
 	// Get options
-	random := r.FormValue("random") == "true"
+	randomRuns := 1
+	if val := r.FormValue("random-runs"); val != "" {
+		if _, err := fmt.Sscanf(val, "%d", &randomRuns); err != nil {
+			http.Error(w, fmt.Sprintf("Error parsing random-runs: %v", err), http.StatusBadRequest)
+			return
+		}
+	}
+	random := randomRuns > 1
+	randomSeedSet := false
+	randomSeed := int64(0)
+	if val := r.FormValue("random-seed"); val != "" {
+		if _, err := fmt.Sscanf(val, "%d", &randomSeed); err != nil {
+			http.Error(w, fmt.Sprintf("Error parsing random-seed: %v", err), http.StatusBadRequest)
+			return
+		}
+		randomSeedSet = true
+	}
 	minUtilization := 30 // Default value
 	if val := r.FormValue("min-utilization"); val != "" {
 		if _, err := fmt.Sscanf(val, "%d", &minUtilization); err != nil {
 			http.Error(w, fmt.Sprintf("Error parsing min-utilization: %v", err), http.StatusBadRequest)
+			return
 		}
 	}
 
@@ -108,6 +130,9 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		Random:                    random,
 		MinUtilization:            minUtilization,
 		ContinueOnParentLookupErr: true,
+		RandomRuns:                randomRuns,
+		RandomSeed:                randomSeed,
+		RandomSeedSet:             randomSeedSet,
 	})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error scheduling workshops: %v", err), http.StatusInternalServerError)
@@ -121,11 +146,16 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	booking.PrintFriendlyResultsHTML(&printOutput, groups, state)
 
 	renderTemplate(w, "results.html", resultsPageData{
-		Logs:           buf.String(),
-		Output:         template.HTML(output.String()),
-		PrintOutput:    template.HTML(printOutput.String()),
-		Random:         random,
-		MinUtilization: minUtilization,
+		Logs:            buf.String(),
+		Output:          template.HTML(output.String()),
+		PrintOutput:     template.HTML(printOutput.String()),
+		Random:          random,
+		RandomRuns:      state.RandomRuns,
+		RandomSeed:      randomSeed,
+		SelectedRun:     state.SelectedRun,
+		SelectedSeed:    state.SelectedSeed,
+		HasSelectedSeed: state.HasSelectedSeed,
+		MinUtilization:  minUtilization,
 	})
 }
 

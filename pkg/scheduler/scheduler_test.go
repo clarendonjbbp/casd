@@ -125,6 +125,34 @@ func TestBookGuaranteedPreferredWorkshopBooksOnePreferredWorkshopPerKind(t *test
 	assert.True(t, booking.HasPreferredWorkshopOfKind(group, state, model.SciWorkshop))
 }
 
+func TestScheduleRandomRunsUsesReproducibleSeed(t *testing.T) {
+	groups, artWorkshops, sciWorkshops := testOptimizationInputs()
+	state, err := Schedule(groups, artWorkshops, sciWorkshops, ScheduleOptions{
+		MinUtilization:            0,
+		ContinueOnParentLookupErr: true,
+		RandomRuns:                5,
+		RandomSeed:                42,
+		RandomSeedSet:             true,
+	})
+	require.NoError(t, err)
+
+	groupsAgain, artWorkshopsAgain, sciWorkshopsAgain := testOptimizationInputs()
+	stateAgain, err := Schedule(groupsAgain, artWorkshopsAgain, sciWorkshopsAgain, ScheduleOptions{
+		MinUtilization:            0,
+		ContinueOnParentLookupErr: true,
+		RandomRuns:                5,
+		RandomSeed:                42,
+		RandomSeedSet:             true,
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, scheduleSignature(groups, state), scheduleSignature(groupsAgain, stateAgain))
+	assert.Equal(t, 5, state.RandomRuns)
+	assert.GreaterOrEqual(t, state.SelectedRun, 1)
+	assert.LessOrEqual(t, state.SelectedRun, 5)
+	assert.Equal(t, int64(42+state.SelectedRun-1), state.SelectedSeed)
+}
+
 func testGroup(id string, grade, students int, artIDs, sciIDs []string) *groupPkg.Group {
 	studentNames := make([]string, students)
 	for i := range studentNames {
@@ -142,6 +170,37 @@ func testGroup(id string, grade, students int, artIDs, sciIDs []string) *groupPk
 		ParentBookingIssues: map[string]string{},
 		ID:                  id,
 	}
+}
+
+func testOptimizationInputs() ([]*groupPkg.Group, map[string]*workshopPkg.Workshop, map[string]*workshopPkg.Workshop) {
+	groups := []*groupPkg.Group{
+		testGroup("group-1", 3, 4, []string{"A1", "A2", "", ""}, []string{"S1", "S2", "", ""}),
+		testGroup("group-2", 3, 4, []string{"A1", "A2", "", ""}, []string{"S1", "S2", "", ""}),
+	}
+	artWorkshops := map[string]*workshopPkg.Workshop{
+		"A1": testWorkshop("A1", model.ArtWorkshop, []int{10, 10, 10, 10}),
+		"A2": testWorkshop("A2", model.ArtWorkshop, []int{10, 10, 10, 10}),
+	}
+	sciWorkshops := map[string]*workshopPkg.Workshop{
+		"S1": testWorkshop("S1", model.SciWorkshop, []int{10, 10, 10, 10}),
+		"S2": testWorkshop("S2", model.SciWorkshop, []int{10, 10, 10, 10}),
+	}
+	return groups, artWorkshops, sciWorkshops
+}
+
+func scheduleSignature(groups []*groupPkg.Group, state *booking.ScheduleState) []string {
+	signature := make([]string, 0, len(groups)*model.NumSessions)
+	for _, group := range groups {
+		for session := range model.NumSessions {
+			workshop := state.WorkshopForGroupSession(group, session)
+			if workshop == nil {
+				signature = append(signature, group.ID+":")
+				continue
+			}
+			signature = append(signature, group.ID+":"+workshop.ID)
+		}
+	}
+	return signature
 }
 
 func testWorkshop(id string, kind int, spotsAvailable []int) *workshopPkg.Workshop {
