@@ -175,6 +175,12 @@
             font: inherit;
             color: var(--ink);
         }
+        input[type="number"]:disabled {
+            color: rgba(65, 82, 91, 0.58);
+            background: #eef3f4;
+            border-color: rgba(108, 123, 127, 0.16);
+            cursor: not-allowed;
+        }
         input[type="file"] {
             padding: 10px;
         }
@@ -292,19 +298,25 @@
 
                     <div class="form-group">
                         <div class="field-card">
-                            <div class="checkbox-row">
-                                <input type="checkbox" id="random" name="random" value="true">
-                                <label for="random">Randomize input order</label>
-                            </div>
-                            <div class="help-text">Helpful when you want a different assignment pattern across repeated runs.</div>
+                            <label for="min-utilization">Minimum utilization (%)</label>
+                            <input type="number" id="min-utilization" name="min-utilization" value="30" min="0" max="100">
+                            <div class="help-text">Sessions below this mark will be considered for rebalancing when possible.</div>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <div class="field-card">
-                            <label for="min-utilization">Minimum utilization (%)</label>
-                            <input type="number" id="min-utilization" name="min-utilization" value="30" min="0" max="100">
-                            <div class="help-text">Sessions below this mark will be considered for rebalancing when possible.</div>
+                            <label for="random-runs">Schedules to try</label>
+                            <input type="number" id="random-runs" name="random-runs" value="1" min="1" max="500">
+                            <div class="help-text">Use 1 for the normal deterministic schedule. Use 2 or more to try randomized schedules and keep the strongest result.</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="field-card">
+                            <label for="random-seed">Random seed</label>
+                            <input type="number" id="random-seed" name="random-seed" placeholder="Disabled for one schedule" disabled>
+                            <div class="help-text" id="random-seed-help">Available when trying 2 or more schedules.</div>
                         </div>
                     </div>
                 </div>
@@ -316,5 +328,26 @@
             </form>
         </section>
     </div>
+    <script>
+        const randomRunsInput = document.getElementById("random-runs");
+        const randomSeedInput = document.getElementById("random-seed");
+        const randomSeedHelp = document.getElementById("random-seed-help");
+
+        function updateRandomSeedState() {
+            const runs = Number.parseInt(randomRunsInput.value, 10) || 1;
+            const enabled = runs > 1;
+            randomSeedInput.disabled = !enabled;
+            randomSeedInput.placeholder = enabled ? "Optional" : "Disabled for one schedule";
+            randomSeedHelp.textContent = enabled
+                ? "Optional. Use this to make the chosen result reproducible."
+                : "Available when trying 2 or more schedules.";
+            if (!enabled) {
+                randomSeedInput.value = "";
+            }
+        }
+
+        randomRunsInput.addEventListener("input", updateRandomSeedState);
+        updateRandomSeedState();
+    </script>
 </body>
 </html>

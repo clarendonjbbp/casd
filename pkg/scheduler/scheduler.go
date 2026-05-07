@@ -3,6 +3,7 @@ package scheduler
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"time"
@@ -17,6 +18,9 @@ type ScheduleOptions struct {
 	Random                    bool
 	MinUtilization            int
 	ContinueOnParentLookupErr bool
+	RandomRuns                int
+	RandomSeed                int64
+	RandomSeedSet             bool
 }
 
 func ReadCSVFiles(groupsFile, artWorkshopsFile, sciWorkshopsFile string) ([]*groupPkg.Group, map[string]*workshopPkg.Workshop, map[string]*workshopPkg.Workshop, error) {
@@ -39,16 +43,30 @@ func ReadCSVFiles(groupsFile, artWorkshopsFile, sciWorkshopsFile string) ([]*gro
 }
 
 func Schedule(groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*workshopPkg.Workshop, opts ScheduleOptions) (*booking.ScheduleState, error) {
+	if opts.RandomRuns > 1 {
+		return scheduleBestOfRandomRuns(groups, artWorkshops, sciWorkshops, opts)
+	}
+
+	rng, selectedSeed := randomSourceForOptions(opts, 0)
+	return scheduleOnce(groups, artWorkshops, sciWorkshops, opts, opts.Random, rng, selectedSeed)
+}
+
+func scheduleOnce(groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*workshopPkg.Workshop, opts ScheduleOptions, random bool, rng *rand.Rand, selectedSeed int64) (*booking.ScheduleState, error) {
 	state := booking.NewScheduleState(groups, artWorkshops, sciWorkshops)
-	state.SetRandomSelection(opts.Random)
+	state.SetRandomSelection(random)
+	state.SetRandomSource(rng)
+	state.RandomRuns = max(opts.RandomRuns, 1)
+	state.SelectedRun = 1
+	state.SelectedSeed = selectedSeed
+	state.HasSelectedSeed = random
 
 	log.Printf("====Booking Parent Classes===\n")
 	if err := bookParentClasses(state, groups, artWorkshops, sciWorkshops, opts.ContinueOnParentLookupErr); err != nil {
 		return nil, err
 	}
 
-	if opts.Random {
-		shuffleGroups(groups)
+	if random {
+		shuffleGroups(groups, rng)
 	}
 
 	log.Printf("\n====Guaranteeing Preferred Art Classes===\n")
@@ -72,6 +90,143 @@ func Schedule(groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*w
 	}
 
 	return state, nil
+}
+
+func scheduleBestOfRandomRuns(groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*workshopPkg.Workshop, opts ScheduleOptions) (*booking.ScheduleState, error) {
+	baseSeed := opts.RandomSeed
+	if !opts.RandomSeedSet {
+		baseSeed = time.Now().UnixNano()
+	}
+
+	var bestState *booking.ScheduleState
+	var bestGroups []*groupPkg.Group
+	var bestSummary booking.ScheduleSummary
+	bestRun := 0
+	bestSeed := int64(0)
+
+	for run := 1; run <= opts.RandomRuns; run++ {
+		runSeed := baseSeed + int64(run-1)
+		candidateGroups := cloneGroups(groups)
+		state, err := scheduleQuietly(func() (*booking.ScheduleState, error) {
+			return scheduleOnce(candidateGroups, artWorkshops, sciWorkshops, opts, true, rand.New(rand.NewSource(runSeed)), runSeed)
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		summary := booking.CalculateScheduleSummary(candidateGroups, state)
+		log.Printf("Optimization run %d of %d using seed %d: satisfaction=%d average=%d%% preferred_art=%d/%d preferred_science=%d/%d",
+			run,
+			opts.RandomRuns,
+			runSeed,
+			summary.OverallSatisfactionPoints,
+			summary.AverageSatisfactionPercent,
+			summary.GroupsWithPreferredArt,
+			summary.TotalGroups,
+			summary.GroupsWithPreferredScience,
+			summary.TotalGroups,
+		)
+		if bestState == nil || isBetterSummary(summary, bestSummary) {
+			bestState = state
+			bestGroups = candidateGroups
+			bestSummary = summary
+			bestRun = run
+			bestSeed = runSeed
+		}
+	}
+
+	copyParentBookingIssues(groups, bestGroups)
+	bestState.RandomRuns = opts.RandomRuns
+	bestState.SelectedRun = bestRun
+	bestState.SelectedSeed = bestSeed
+	bestState.HasSelectedSeed = true
+	log.Printf("Selected optimized run %d of %d using seed %d: satisfaction=%d average=%d%% preferred_art=%d/%d preferred_science=%d/%d",
+		bestRun,
+		opts.RandomRuns,
+		bestSeed,
+		bestSummary.OverallSatisfactionPoints,
+		bestSummary.AverageSatisfactionPercent,
+		bestSummary.GroupsWithPreferredArt,
+		bestSummary.TotalGroups,
+		bestSummary.GroupsWithPreferredScience,
+		bestSummary.TotalGroups,
+	)
+
+	return bestState, nil
+}
+
+func scheduleQuietly(schedule func() (*booking.ScheduleState, error)) (*booking.ScheduleState, error) {
+	originalWriter := log.Writer()
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(originalWriter)
+
+	return schedule()
+}
+
+func isBetterSummary(candidate, current booking.ScheduleSummary) bool {
+	if candidate.OverallSatisfactionPoints != current.OverallSatisfactionPoints {
+		return candidate.OverallSatisfactionPoints > current.OverallSatisfactionPoints
+	}
+	if candidate.AverageSatisfactionPercent != current.AverageSatisfactionPercent {
+		return candidate.AverageSatisfactionPercent > current.AverageSatisfactionPercent
+	}
+	if candidate.GroupsWithPreferredArt != current.GroupsWithPreferredArt {
+		return candidate.GroupsWithPreferredArt > current.GroupsWithPreferredArt
+	}
+	return candidate.GroupsWithPreferredScience > current.GroupsWithPreferredScience
+}
+
+func cloneGroups(groups []*groupPkg.Group) []*groupPkg.Group {
+	cloned := make([]*groupPkg.Group, 0, len(groups))
+	for _, group := range groups {
+		clone := *group
+		clone.Students = append([]string(nil), group.Students...)
+		clone.ArtIDs = append([]string(nil), group.ArtIDs...)
+		clone.SciIDs = append([]string(nil), group.SciIDs...)
+		clone.ParentIDs = copyStringSet(group.ParentIDs)
+		clone.ParentBookingIssues = copyStringMap(group.ParentBookingIssues)
+		cloned = append(cloned, &clone)
+	}
+	return cloned
+}
+
+func copyParentBookingIssues(groups, sourceGroups []*groupPkg.Group) {
+	issuesByID := make(map[string]map[string]string, len(sourceGroups))
+	for _, group := range sourceGroups {
+		issuesByID[group.ID] = group.ParentBookingIssues
+	}
+
+	for _, group := range groups {
+		group.ParentBookingIssues = copyStringMap(issuesByID[group.ID])
+	}
+}
+
+func copyStringSet(source map[string]struct{}) map[string]struct{} {
+	copied := make(map[string]struct{}, len(source))
+	for key := range source {
+		copied[key] = struct{}{}
+	}
+	return copied
+}
+
+func copyStringMap(source map[string]string) map[string]string {
+	copied := make(map[string]string, len(source))
+	for key, value := range source {
+		copied[key] = value
+	}
+	return copied
+}
+
+func randomSourceForOptions(opts ScheduleOptions, runOffset int64) (*rand.Rand, int64) {
+	if !opts.Random {
+		return nil, 0
+	}
+	if opts.RandomSeedSet {
+		seed := opts.RandomSeed + runOffset
+		return rand.New(rand.NewSource(seed)), seed
+	}
+	seed := time.Now().UnixNano()
+	return rand.New(rand.NewSource(seed)), seed
 }
 
 func bookParentClasses(state *booking.ScheduleState, groups []*groupPkg.Group, artWorkshops, sciWorkshops map[string]*workshopPkg.Workshop, continueOnLookupErr bool) error {
@@ -251,11 +406,13 @@ func wouldBreakPreferredGuarantee(state *booking.ScheduleState, group *groupPkg.
 	return newRank < 1 || newRank > 4
 }
 
-func shuffleGroups(groups []*groupPkg.Group) {
-	r := rand.New(rand.NewSource(time.Now().Unix()))
+func shuffleGroups(groups []*groupPkg.Group, rng *rand.Rand) {
+	if rng == nil {
+		rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+	}
 	for len(groups) > 0 {
 		n := len(groups)
-		randIndex := r.Intn(n)
+		randIndex := rng.Intn(n)
 		groups[n-1], groups[randIndex] = groups[randIndex], groups[n-1]
 		groups = groups[:n-1]
 	}

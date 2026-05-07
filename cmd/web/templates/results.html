@@ -353,7 +353,21 @@
                 <ul class="summary-list">
                     <li>
                         <span class="summary-label">Randomization</span>
-                        <span class="summary-value">{{if .Random}}Enabled{{else}}Disabled{{end}}</span>
+                        <span class="summary-value">{{if or .Random (gt .RandomRuns 1)}}Enabled{{else}}Disabled{{end}}</span>
+                    </li>
+                    <li>
+                        <span class="summary-label">Schedules Tried</span>
+                        <span class="summary-value">{{.RandomRuns}}</span>
+                    </li>
+                    {{if gt .RandomRuns 1}}
+                    <li>
+                        <span class="summary-label">Selected Run</span>
+                        <span class="summary-value">{{.SelectedRun}}</span>
+                    </li>
+                    {{end}}
+                    <li>
+                        <span class="summary-label">Random Seed</span>
+                        <span class="summary-value">{{if .HasSelectedSeed}}{{.SelectedSeed}}{{else}}None{{end}}</span>
                     </li>
                     <li>
                         <span class="summary-label">Minimum Utilization</span>

@@ -25,6 +25,11 @@ type ScheduleState struct {
 	bookingsByGroup           map[string][]*Booking
 	bookingsByGroupSession    map[groupSessionKey]*Booking
 	bookingsByWorkshopSession map[workshopSessionKey][]*Booking
+	SelectedRun               int
+	SelectedSeed              int64
+	HasSelectedSeed           bool
+	RandomRuns                int
+	rng                       *rand.Rand
 	randomSelection           bool
 }
 
@@ -56,6 +61,10 @@ func NewScheduleState(_ []*groupPkg.Group, _ ...map[string]*workshopPkg.Workshop
 
 func (s *ScheduleState) SetRandomSelection(enabled bool) {
 	s.randomSelection = enabled
+}
+
+func (s *ScheduleState) SetRandomSource(rng *rand.Rand) {
+	s.rng = rng
 }
 
 func (s *ScheduleState) Book(group *groupPkg.Group, workshop *workshopPkg.Workshop, session int) {
@@ -228,7 +237,11 @@ func BookWorkshopIfAvailable(state *ScheduleState, workshop *workshopPkg.Worksho
 	sessions := state.AvailableSessions(workshop, group)
 	sessionIndex := 0
 	if state.randomSelection {
-		sessionIndex = rand.Intn(len(sessions))
+		if state.rng != nil {
+			sessionIndex = state.rng.Intn(len(sessions))
+		} else {
+			sessionIndex = rand.Intn(len(sessions))
+		}
 	}
 	state.Book(group, workshop, sessions[sessionIndex])
 
