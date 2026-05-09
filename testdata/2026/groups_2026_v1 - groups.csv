@@ -1,0 +1,118 @@
+Teacher Name,Room Number,Grade,Group number,Names of students in this group (first and last),Art Workshops 1,Art Workshops 2,Art Workshops 3,Art Workshops 4,Science Workshop 1,Science Workshop 2,Science Workshop 3,Science Workshop 4,Presenter Kids
+Luke,209,4/5,Group 1,"Joseph Li, Riley Karlsson, Sophia Katz, Clara Berg, Ian Perez",A15,A23,A3 ,A12,S21,S17,S25,S13,
+Luke,209,4/5,Group 2,"Hannah Martin, Jackson Patel, Alice Eriksson, Isabella Lopez, Sofia Flores",A20,A13,A1 ,A15,S17,S21,S10,S13,
+Luke,209,4/5,Group 3,"Penelope Lee, Harper Baker, Adam Katz, Abigail Nguyen, Alexander Nilsson",A6 ,A12,A15,A20,S21,S7 ,S13,S10,
+Luke,209,4/5,Group 4,"Lucy Gonzalez, Abigail Hall, Nora Brown, Adrian Huang, Emily Flores",A15,A23,A12,A6 ,S21,S15,S13,S7 ,
+Luke,209,4/5,Group 5,"Adam Sanchez, Theodore Kumar, Julia Wilson, Henry Svensson, Austin Jones",A20,A14,A15,A12,S17,S25,S1 ,S21,
+Alexander,205,5,Group 1,"Elijah Baker, Nicholas Karlsson, Kevin Rosen, Chloe Lopez, Jacob O'Connor, Aaron Rosen",A5 ,A22,A18,A15,S7 ,S9 ,S17,S21,A15 S21 S17
+Alexander,205,5,Group 2,"Alexander Nelson, Adrian Choi, Connor O'Connor, Amelia Choi, Hannah Zhang",A18,A15,A20,A21,S1 ,S17,S21,S25,
+Alexander,205,5,Group 3,"Aiden Eriksson, Caleb Stern, Daniel Lee, Luna Anderson, Julia Perez, Lucy Hill",A9 ,A14,A20,A22,S1 ,S10,S21,S25,
+Alexander,205,5,Group 4,"Thomas Jones, Rose Patel, Victoria Eriksson, Nathan Miller, Oliver Liu, Benjamin Garcia",A1 ,A12,A15,A22,S7 ,S13,S17,S21,
+Alexander,205,5,Group 5,"Benjamin Wang, Carter Schwartz, Theodore Lee, Avery Ramirez, Claire Walker",A14,A15,A21,A9 ,S7 ,S1 ,S10,S22,
+Layla,116,1,Group 1,"Paisley Hill, James Yang, Nicholas Hernandez, Alice Young, Luna Williams, Charlotte Levy, Paisley Wright, Harper Gustafsson, Isaac Carter, Isabella Larsson, Kevin Ramirez, Dylan Schwartz, Eli O'Brien",A10,A20,A4 ,A22,S12,S20,S1 ,S7 ,A10
+Nora,105,1,Group 1,"Wyatt Hall, Charlotte Garcia, Naomi Sharma, Madison Allen, Riley Stern",A20,A16,A19,A11,S3 ,S20,S19,S11,
+William,105,1,Group 2,"Theodore Thomas, Mia Wilson, Luna Campbell, Austin Nilsson, Sarah O'Neill",A22,A11,A2 ,A4 ,S7 ,S16,S26,S14,
+Nora,105,1,Group 3,"Alice Green, Xavier Berg, Chloe Flores, Dylan Brown, Carter Singh, Eleanor Gonzalez",A10,A14,A7 ,A22,S2 ,S12,S23,S16,
+Nora,105,1,Group 4,"Alice O'Connor, Bella Williams, Ella Johnson, Abigail Allen, Gabriel Cho, Lily Berg",A17,A11,A20,A2 ,S11,S25,S4 ,S23,
+Isaac,314,2,Group 1,"Nora Svensson, Alice Martin, Xavier Jackson, Skylar O'Connor",A10,A20,A4 ,A14,S20,S7 ,S16,S22,
+Isaac,314,2,Group 2,"Matthew Kelly, Jonathan Lee, Josiah Davis, Dominic Miller",A10,A2 ,A9 ,A4 ,S16,S20,S7 ,S22,
+Isaac,314,2,Group 3,"Theodore Davis, Riley White, Mason Kim, Kyle Huang, Avery Murphy",A19,A10,A16,A20,S7 ,S25,S22,S23,A19
+Isaac,314,2,Group 4,"Elijah Walker, Ariana Smith, Isaac King, Alice Johnson",A10,A20,A9 ,A14,S19,S25,S7 ,S3 ,
+Isaac,314,2,Group 5,"Nora Anderson, Gabriel Green, Riley Levy, Sebastian Moore",A10,A7 ,A4 ,A17,S1 ,S7 ,S25,S20,
+Victoria,3,K,Group 1,"Violet Byrne, Kevin Harris, Luna Martin, Lily Johnson, Mason Perez",A4 ,A7 ,A9 ,A14,S1 ,S4 ,S12,S19,
+Victoria,3,K,Group 2,"Eva Olsson, Ariana Yang, Owen Gupta, Scarlett White",A20,A19,A17,A4 ,S27,S25,S23,S20,
+Victoria,3,K,Group 3,"Sofia Carter, Aiden Miller, Maya Anderson, Mia Hill, Grace Roberts",A4 ,A7 ,A9 ,A10,S1 ,S4 ,S7 ,S12,
+Victoria,3,K,Group 4,"Lucas Walsh, Hazel Robinson, Nova Olsson, Daniel Svensson",A22,A20,A9 ,A16,S18,S20,S8 ,S14,
+Victoria,3,K,Group 5,"Elizabeth Li, Austin Wright, Chloe O'Brien, Scarlett Roberts",A4 ,A17,A16,A7 ,S19,S4 ,S20,S23,
+Sebastian,1,K,Group 1,"Jonathan Kang, Audrey Yang, Anna Young",A2 ,A7 ,A16,A14,S4 ,S12,S11,S18,
+Sebastian,1,K,Group 2,"Sarah McCarthy, Ethan Torres, Maya O'Brien, Layla Flores",A20,A16,A4 ,A7 ,S20,S4 ,S3 ,S1 ,
+Sebastian,1,K,Group 3,"Wyatt Davis, Daniel Young, Kevin Williams, Isaac Goldberg",A11,A7 ,A14,A10,S12,S11,S8 ,S22,
+Sebastian,1,K,Group 4,"Paisley Singh, Aaron Karlsson, Avery Sullivan, Isabella Levy",A9 ,A11,A16,A19,S27,S4 ,S20,S19,
+Sebastian,1,K,Group 5,"Aaron Karlsson, Oliver Martin, Amelia Nelson, Elijah Walker",A11,A4 ,A19,A20,S12,S7 ,S8 ,S18,
+Daniel,316,2,Group 1,"Kyle Baker, Matthew Brown, Joseph Jung, Naomi Karlsson",A3 ,A10,A12,A20,S7 ,S11,S16,S19,
+Daniel,316,2,Group 2,"Naomi Weiss, Elizabeth Svensson, Connor Lopez, Jacob Schwartz",A1 ,A6 ,A19,A10,S1 ,S7 ,S12,S16,
+Daniel,316,2,Group 3,"Eleanor Choi, Violet Goldberg, Kyle Kumar, Josiah Shah",A10,A12,A14,A20,S19,S23,S1 ,S7 ,
+Daniel,316,2,Group 4,"Bella Goldberg, Benjamin Smith, Isabella Kumar, Daniel Wright",A1 ,A10,A14,A22,S7 ,S12,S11,S20,
+Daniel,316,2,Group 5,"Nora Hill, Skylar Rodriguez, Harper Campbell, Robert Lopez, James Rodriguez",A2 ,A10,A17,A20,S7 ,S12,S16,S22,
+James,202,3,Group 1,"Amelia Nelson, Henry Brown, Evelyn Rivera, Julia Brown, Austin Martin",A20,A15,A12,A21,S1 ,S21,S7 ,S13,S21 A21
+Owen,202,3,Group 2,"Sebastian White, Xavier Thompson, Ella Wright, Josiah Wilson",A9 ,A12,A2 ,A1 ,S13,S10,S15,S17,S19
+Owen,202,3,Group 3,"Abigail Cho, Sofia O'Brien, Claire Jung, Eleanor Allen",A20,A22,A15,A20,S17,S21,S25,S13,
+Owen,202,3,Group 4,"Aurora Holm, Audrey Nguyen, Gabriel Sullivan, Paisley Levy",A15,A5 ,A12,A20,S17,S10,S25,S15,
+Owen,202,3,Group 5,"Luke Katz, Victoria Lopez, Chloe Scott, Isaac Schwartz",A20,A15,A9 ,A21,S1 ,S10,S17,S21,
+Ava,310,3,Group 1,"Aiden Thomas, Sebastian Kumar, Daniel Svensson, Paisley King, Joseph Kim",A12,A15,A18,A20,S1 ,S10,S17,S21,A6
+Ava,310,3,Group 2,"Abigail Jones, William Moore, Jeremiah Gustafsson, Austin Martin, Kevin Lewis",A6 ,A11,A14,A15,S3 ,S7 ,S13,S22,S22
+Ava,310,3,Group 3,"Lucas Lewis, Sofia Hill, Xavier Thompson, Charlotte Huang, Amelia Byrne, Sophia Wilson",A6 ,A9 ,A12,A20,S7 ,S10,S17,S24,
+Ava,310,3,Group 4,"Luna Martin, Layla Young, Anna Kumar, Bella Li, Ethan O'Connor",A8 ,A11,A12,A23,S10,S17,S22,S24,
+Jack,207,4,Group 3,"Theodore King, Adam O'Brien, Rose Rosen, Layla Cohen, Alexander Green",A13,A2 ,A9 ,A15,S17,S22,S25,S1 ,
+Jack,207,4,Group 5,"Owen Katz, Maya Roberts, Ava Karlsson, Clara Olsson, Matthew Smith, Theodore Wang",A3 ,A15,A1 ,A6 ,S7 ,S17,S21,S6 ,
+Jack,207,4,Group 4,"Joseph Gupta, Isaac Campbell, Harper Murphy, Henry Clark, Owen Ryan, Luke Martin",A15,A14,A2 ,A12,S1 ,S7 ,S17,S25,
+Jack,207,4,Group 1,"Oliver Harris, Riley Ramirez, Nova Nelson, Grace Robinson, Eli Walsh, Henry O'Brien",A2 ,A12,A13,A20,S7 ,S17,S22,S21,
+Jack,207,4,Group 2,"Grace Cohen, Elijah O'Brien, Jonathan Walker, Alexander Rosen, Bella Smith, Dylan O'Brien",A9 ,A21,A2 ,A22,S17,S21,S7 ,S24,
+Avery,107,K,Group 1,"Sofia Jones, Mason Sullivan, Grace Kelly, Mia Campbell, Skylar Martin",A4 ,A7 ,A10,A16,S11,S12,S23,S14,
+Avery,107,K,Group 2,"Luna Martin, Ethan Berg, Riley Schwartz, Aiden Levy",A20,A19,A4 ,A7 ,S4 ,S11,S25,S27,
+Avery,107,K,Group 3,"Jeremiah Larsson, Sophia Wilson, Adam Jackson, Theodore Byrne",A2 ,A4 ,A9 ,A10,S1 ,S3 ,S14,S12,
+Avery,107,K,Group 4,"Lily Torres, Zoey Hill, Kevin Hill, Zoey Rivera",A20,A22,A7 ,A4 ,S20,S23,S22,S2 ,
+Avery,107,K,Group 5,"Caleb Brown, Adrian Weiss, Paisley Gupta, Michael Ramirez, Victoria Byrne",A7 ,A9 ,A10,A11,S12,S8 ,S18,S26,
+Samuel,103,1,Group 1,"Bella Karlsson, Sebastian Anderson, Henry Cohen, Luke Roberts, Rose Williams",A10,A16,A3 ,A20,S4 ,S11,S12,S19,
+Samuel,103,1,Group 2,"Penelope Campbell, Theodore Walker, Riley Wright, Michael Johnson",A9 ,A19,A10,A4 ,S1 ,S14,S20,S27,
+Samuel,103,1,Group 3,"Robert Garcia, Avery Gustafsson, Chloe Rivera, Madison Sullivan",A14,A16,A20,A22,S2 ,S1 ,S23,S16,
+Samuel,103,1,Group 4,"Aiden Zhang, Rose White, Connor Nilsson, Violet Patel, Adrian Lopez",A10,A2 ,A19,A20,S7 ,S8 ,S20,S25,A16
+Samuel,103,1,Group 5,"Luke Sanchez, Hazel Wright, Dylan Huang, Jacob Larsson",A16,A4 ,A11,A22,S3 ,S7 ,S16,S22,
+Isabella,109,1,Group 1,"Jackson Johnson, Emily O'Connor, Adrian Huang, Jackson Holm, Nicholas Allen",A2 ,A3 ,A4 ,A7 ,S1 ,S2 ,S3 ,S4 ,
+Isabella,109,1,Group 2,"Dylan Allen, Theodore Smith, Luke Nelson, Aaron Olsson",A9 ,A10,A11,A16,S7 ,S8 ,S11,S12,
+Isabella,109,1,Group 3,"Anna Kumar, Sofia Eriksson, Gabriel Gonzalez, Dominic Huang",A22,A20,A19,A17,S27,S26,S25,S23,S19
+Isabella,109,1,Group 4,"Violet Adams, Aaron Scott, Jacob Klein, Ella Wright",A17,A16,A14,A9 ,S22,S20,S19,S18,
+Isabella,109,1,Group 5,"Connor Svensson, Eleanor Nelson, Bella Green, William Miller",A11,A4 ,A16,A20,S16,S14,S12,S11,S19
+Sofia,203,5,Group 1,"Adrian O'Connor, Adam Sanchez, Layla Patel, Emily Flores, Lily Cho, Jonathan Taylor",A12,A15,A21,A22,S17,S21,S25,S13,
+Sofia,203,5,Group 2,"Victoria Kang, Cameron Li, Dylan Nilsson, Penelope Li, Elijah Rodriguez, Lucy Flores",A15,A13,A20,A21,S17,S21,S25,S7 ,
+Sofia,203,5,Group 3,"Adam O'Connor, Robert Robinson, Amelia Kumar, Layla Goldberg, Victoria Ramirez, Sebastian Larsson",A13,A15,A21,A14,S1 ,S13,S25,S10,
+Sofia,203,5,Group 4,"Cameron Miller, Claire Lewis, Carter Hill, Maya Baker, Jeremiah Miller, Riley Olsson",A15,A12,A22,A11,S7 ,S25,S17,S21,
+Sofia,203,5,Group 5,"Samuel Brown, Charlotte Gonzalez, Claire Thomas, Scarlett Scott",A15,A22,A6 ,A12,S1 ,S17,S25,S21,
+Benjamin,312,3,Group 1,"Avery Hernandez, Isabella Martin, Daniel Garcia, Oliver Clark, Jeremiah Allen",A8 ,A18,A15,A12,S21,S17,S24,S10,A12
+Benjamin,312,3,Group 2,"Hannah Campbell, Eva Sanchez, Naomi Brown, Kevin Thomas, Nicholas Allen",A23,A22,A15,A5 ,S5 ,S9 ,S10,S15,S19 S21 A6
+Benjamin,312,3,Group 3,"Kevin Wright, Mia Rivera, Claire Eriksson, Mason Hernandez",A1 ,A12,A15,A5 ,S21,S9 ,S17,S24,A15
+Benjamin,312,3,Group 4,"Audrey Robinson, Mason Zhang, Harper Jung, Isabella Adams",A22,A6 ,A15,A21,S28,S21,S5 ,S10,
+Benjamin,312,3,Group 5,"Ava O'Connor, Sarah Katz, Ryan Levy, Luke Goldberg",A13,A8 ,A9 ,A5 ,S21,S24,S28,S5 ,
+David,206,4/5,Group 1,"Aaron Johnson, Sofia Shah, Sophia Murphy, Charlotte Jones, Isaac Harris",A3 ,A12,A14,A15,S7 ,S1 ,S21,S22,
+Harper,206,4/5,Group 2,"Ariana Hall, Connor McCarthy, Audrey Schwartz, Caleb Robinson, Zoey King",A6 ,A21,A15,A12,S1 ,S7 ,S16,S10,A21
+Harper,206,4/5,Group 3,"Lucas Hill, Violet Huang, Xavier Liu, Ariana Schwartz",A12,A18,A8 ,A2 ,S10,S7 ,S25,S15,A18
+Harper,206,4/5,Group 4,"Samuel Thompson, Aurora Green, Luna Nguyen, Nicholas Perez",A3 ,A21,A15,A12,S21,S1 ,S7 ,S17,
+Harper,206,4/5,Group 5,"Elijah Goldberg, David Wright, Emily Jung, Adrian Garcia",A15,A6 ,A1 ,A14,S7 ,S17,S25,S22,
+Harper,206,4/5,Group 6,"Avery Sharma, Hannah Gustafsson, Nova Scott, Daniel Wu",A8 ,A5 ,A13,A10,S17,S1 ,S10,S21,
+Harper,206,4/5,Group 7,"Benjamin Moore, Sarah Kang, Riley Jung, Claire Wilson",A5 ,A14,A1 ,A12,S16,S21,S2 ,S24,
+Joseph,5,K,Group 1,"Violet Larsson, Dominic Sanchez, Aaron O'Brien",A16,A20,A10,A17,S1 ,S3 ,S16,S7 ,
+Joseph,5,K,Group 2,"Riley Green, Gabriel Jones, Zoey Karlsson",A17,A16,A20,A19,S3 ,S16,S12,S1 ,
+Joseph,5,K,Group 3,"Anna McCarthy, Jackson Singh, Austin Kelly",A19,A17,A16,A22,S26,S16,S20,S12,
+Joseph,5,K,Group 4,"Austin Gustafsson, Thomas Gonzalez, Josiah Mitchell",A20,A14,A22,A16,S20,S16,S20,S26,
+Joseph,5,K,Group 5,"Adam Schwartz, Ava Weiss, Daniel Hernandez, Benjamin Gupta",A14,A10,A19,A16,S20,S12,S23,S16,
+Evelyn,318,2,Group 1,"Sebastian Wu, Aurora Zhang, Chloe Jones, Scarlett Campbell",A22,A10,A16,A1 ,S16,S25,S15,S7 ,
+Evelyn,318,2,Group 2,"Robert Anderson, Gabriel Robinson, Layla Singh, Hannah Garcia, Michael Green",A10,A11,A2 ,A17,S7 ,S25,S19,S20,
+Evelyn,318,2,Group 3,"Lucas Cohen, Anna Johnson, Sarah Young, Connor Schwartz",A10,A17,A6 ,A22,S1 ,S22,S25,S16,
+Evelyn,318,2,Group 4,"Bella Smith, Josiah Sullivan, Lucy Cho, Nova Davis, Samuel Green",A10,A9 ,A16,A11,S16,S25,S19,S7 ,
+Evelyn,318,2,Group 5,"Luke Lewis, Rose Martin, Violet King",A20,A3 ,A10,A12,S1 ,S16,S25,S7 ,
+Anthony,214,4,Group 4,"Sarah Nilsson, Carter Eriksson, Sebastian Adams, Carter Murphy, Thomas O'Connor",A15,A18,A20,A21,S17,S7 ,S1 ,S10,
+Anthony,214,4,Group 1,"William Adams, Emily Garcia, William Walker, Carter Kelly, Clara Smith",A8 ,A12,A1 ,A22,S1 ,S7 ,S17,S10,
+Anthony,214,4,Group 2,"Ryan Nelson, William Ryan, Caleb Gupta, Eva Karlsson, Carter Choi",A6 ,A12,A15,A21,S7 ,S17,S21,S25,
+Anthony,214,4,Group 3,"Eli Hill, Ian Gonzalez, Claire Sullivan, Luke Anderson, Maya Green",A6 ,A11,A15,A22,S1 ,S7 ,S17,S21,
+Anthony,214,4,Group 5,"Evelyn Friedman, Michael Smith, Cameron Wang, David Nilsson",A3 ,A14,A15,A6 ,S13,S1 ,S26,S3 ,
+Anthony,214,4,Group 6,"Maya Lee, Charlotte Li, Ava Chen, Lucas Williams, Skylar Sharma",A12,A15,A20,A22,S7 ,S10,S13,S24,
+Lucas,204,3,Group 1,"Xavier Rivera, Nicholas Singh, Sebastian Kelly, Emily Gupta",A20,A13,A18,A3 ,S10,S15,S26,S28,A15
+Lucas,204,3,Group 2,"Rose Walker, James Friedman, Emilia Thomas, Jackson Sullivan",A15,A8 ,A23,A12,S13,S19,S9 ,S24,A12 A23 S1
+Lucas,204,3,Group 3,"Adrian Jung, Violet Wu, Isabella Martinez, Daniel Sullivan",A2 ,A11,A6 ,A1 ,S2 ,S22,S6 ,S17,S6
+Lucas,204,3,Group 4,"Aurora Cho, William Rodriguez, Jacob Cohen, Eva Lewis",A12,A23,A13,A22,S7 ,S13,S17,S22,
+Lucas,204,3,Group 5,"Luke Kelly, Ryan Kang, Nathan Zhang, Anna Green, Bella Olsson",A20,A6 ,A21,A22,S6 ,S21,S28,S5 ,S6
+Theodore,320,3,Group 1,"Sebastian Larsson, Elizabeth Klein, Charlotte Brown, Ethan Hernandez, Julia Thompson",A20,A15,A12,A18,S24,S10,S21,S13,
+Gabriel,N313,2,Group 1,"Jackson Chen, William Perez, Chloe Robinson, Clara Byrne",A10,A4 ,A3 ,A14,S1 ,S7 ,S22,S16,S26
+Gabriel,N313,2,Group 2,"Wyatt Garcia, Nicholas Li, Owen Young, Luke Rivera",A1 ,A10,A9 ,A12,S7 ,S1 ,S20,S2 ,A1 S7
+Gabriel,N313,2,Group 3,"Kevin Sanchez, Isaac Hill, Thomas Lopez, Joseph Li",A10,A20,A2 ,A7 ,S23,S25,S20,S12,
+Gabriel,N313,2,Group 4,"Violet Schwartz, Ruby Olsson, Hannah Lee, Caleb Campbell, Connor Ramirez",A2 ,A17,A10,A20,S7 ,S1 ,S16,S19,
+Gabriel,N313,2,Group 5,"Isaac Thomas, Sofia Yang, Claire Kelly, Harper Levy",A10,A14,A9 ,A11,S7 ,S25,S16,S20,
+Charlotte,108,1,Group 1,"Anna Ramirez, David Kumar, Riley Chen, Samuel Kang",A2 ,A3 ,A4 ,A7 ,S1 ,S2 ,S3 ,S4 ,
+Charlotte,108,1,Group 2,"Sofia Mitchell, Emilia Harris, Joseph Smith, Hazel Gonzalez",A9 ,A10,A11,A14,S7 ,S8 ,S11,S12,
+Charlotte,108,1,Group 3,"Anna Martin, James Martinez, Austin Perez, Dylan Gupta",A17,A19,A20,A22,S18,S14,S16,S19,
+Charlotte,108,1,Group 4,"Victoria Nguyen, Clara Chen, Ruby Holm, Lucas Mitchell",A2 ,A4 ,A9 ,A11,S20,S22,S23,S25,S16
+Charlotte,108,1,Group 5,"Michael Weiss, Eleanor O'Neill, Cameron Stern, Xavier Friedman, Henry Walker",A16,A19,A22,A3 ,S26,S27,S1 ,S2 ,
+Luna,110,TK,Group 1,"Isaac Williams, Evelyn Nilsson, Luke Gustafsson, Nathan Young, William O'Neill",A7 ,A9 ,A4,A19,S8,S12,S25,S3 ,
+Luna,110,TK,Group 2,"Ruby Thomas, Sofia Williams, Nathan Kumar, Isaac White, Daniel Johnson",A17,A4 ,A16,A7 ,S20,S12,S22,S11,S19
+Luna,110,TK,Group 3,"Riley Liu, Aurora Moore, Isaac King, Henry Wright, Ethan Brown",A19,A9 ,A4,A16,S4 ,S12,S14,S18,
+Luna,110,TK,Group 4,"Wyatt King, Nova Martin, Amelia Olsson, Matthew Torres, Emily Chen",A7 ,A4 ,A20,A16,S8,S20,S25,S23,
