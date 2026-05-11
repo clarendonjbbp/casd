@@ -104,13 +104,16 @@ $(golangci_lint_bin): | go-check
 
 .PHONY: build clean
 
-build: build-sorter build-web
+build: build-sorter build-web build-popularity
 
 build-sorter:
 	go build -o sorter ./cmd/sorter
 
 build-web:
 	go build -o sorter-web ./cmd/web
+
+build-popularity:
+	go build -o workshop-popularity ./cmd/popularity
 
 build-randomizer:
 	go build -o randomize ./cmd/randomizer
