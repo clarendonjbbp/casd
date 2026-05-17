@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	popularityPkg "github.com/clarendonjbbp/casd/pkg/popularity"
 	"github.com/clarendonjbbp/casd/pkg/scheduler"
 )
 
@@ -21,7 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	popularity := calculatePopularity(groups, artWorkshops, sciWorkshops)
+	popularity := popularityPkg.Calculate(groups, artWorkshops, sciWorkshops)
 	reportFormat, err := parseReportFormat(*format)
 	if err != nil {
 		log.Fatal(err)

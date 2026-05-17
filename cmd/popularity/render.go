@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/clarendonjbbp/casd/pkg/model"
+	popularityPkg "github.com/clarendonjbbp/casd/pkg/popularity"
 )
 
 const workshopNameWidth = 44
@@ -36,12 +37,12 @@ func parseReportFormat(format string) (reportFormat, error) {
 	}
 }
 
-func printPopularityReport(output io.Writer, popularity []*workshopPopularity, limit int, format reportFormat) {
+func printPopularityReport(output io.Writer, popularity []*popularityPkg.Entry, limit int, format reportFormat) {
 	if limit < 1 {
 		limit = 1
 	}
 
-	aggregatedPopularity := aggregatePopularity(popularity)
+	aggregatedPopularity := popularityPkg.Aggregate(popularity)
 	widths := calculateReportWidths(aggregatedPopularity)
 
 	if format == htmlFormat {
@@ -49,26 +50,26 @@ func printPopularityReport(output io.Writer, popularity []*workshopPopularity, l
 		return
 	}
 
-	printPopularityTable(output, "Most Popular Art Workshops", sortPopularity(filterPopularityByKind(aggregatedPopularity, model.ArtWorkshop), true), limit, widths, format)
+	printPopularityTable(output, "Most Popular Art Workshops", popularityPkg.Sort(popularityPkg.FilterByKind(aggregatedPopularity, model.ArtWorkshop), true), limit, widths, format)
 	fmt.Fprintln(output)
-	printPopularityTable(output, "Least Popular Art Workshops", sortPopularity(filterPopularityByKind(aggregatedPopularity, model.ArtWorkshop), false), limit, widths, format)
+	printPopularityTable(output, "Least Popular Art Workshops", popularityPkg.Sort(popularityPkg.FilterByKind(aggregatedPopularity, model.ArtWorkshop), false), limit, widths, format)
 	fmt.Fprintln(output)
-	printPopularityTable(output, "Most Popular Science Workshops", sortPopularity(filterPopularityByKind(aggregatedPopularity, model.SciWorkshop), true), limit, widths, format)
+	printPopularityTable(output, "Most Popular Science Workshops", popularityPkg.Sort(popularityPkg.FilterByKind(aggregatedPopularity, model.SciWorkshop), true), limit, widths, format)
 	fmt.Fprintln(output)
-	printPopularityTable(output, "Least Popular Science Workshops", sortPopularity(filterPopularityByKind(aggregatedPopularity, model.SciWorkshop), false), limit, widths, format)
+	printPopularityTable(output, "Least Popular Science Workshops", popularityPkg.Sort(popularityPkg.FilterByKind(aggregatedPopularity, model.SciWorkshop), false), limit, widths, format)
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "* Score is between 0 and 100, where 100 means every eligible group listed the workshop as its top choice.")
 }
 
-func calculateReportWidths(popularity []*workshopPopularity) reportWidths {
+func calculateReportWidths(popularity []*popularityPkg.Entry) reportWidths {
 	widths := reportWidths{id: len("ID")}
 	for _, item := range popularity {
-		widths.id = max(widths.id, len(item.id))
+		widths.id = max(widths.id, len(item.ID))
 	}
 	return widths
 }
 
-func printPopularityTable(output io.Writer, title string, popularity []*workshopPopularity, limit int, widths reportWidths, format reportFormat) {
+func printPopularityTable(output io.Writer, title string, popularity []*popularityPkg.Entry, limit int, widths reportWidths, format reportFormat) {
 	if format == markdownFormat {
 		printMarkdownPopularityTable(output, title, popularity, limit)
 		return
@@ -76,7 +77,7 @@ func printPopularityTable(output io.Writer, title string, popularity []*workshop
 	printTextPopularityTable(output, title, popularity, limit, widths)
 }
 
-func printTextPopularityTable(output io.Writer, title string, popularity []*workshopPopularity, limit int, widths reportWidths) {
+func printTextPopularityTable(output io.Writer, title string, popularity []*popularityPkg.Entry, limit int, widths reportWidths) {
 	fmt.Fprintln(output, title)
 	fmt.Fprintln(output, strings.Repeat("-", len(title)))
 
@@ -96,20 +97,20 @@ func printTextPopularityTable(output io.Writer, title string, popularity []*work
 	)
 
 	for i, workshopPopularity := range popularity[:min(limit, len(popularity))] {
-		nameLines := wrapText(reportWorkshopName(workshopPopularity), workshopNameWidth)
+		nameLines := wrapText(popularityPkg.ReportWorkshopName(workshopPopularity), workshopNameWidth)
 		fmt.Fprintf(
 			output,
 			"%-4d  %-*s  %-*s  %5d  %3d  %3d  %3d  %3d\n",
 			i+1,
 			widths.id,
-			workshopPopularity.id,
+			workshopPopularity.ID,
 			workshopNameWidth,
 			nameLines[0],
-			workshopPopularity.normalizedScore(),
-			workshopPopularity.rankCounts[0],
-			workshopPopularity.rankCounts[1],
-			workshopPopularity.rankCounts[2],
-			workshopPopularity.rankCounts[3],
+			workshopPopularity.NormalizedScore(),
+			workshopPopularity.RankCounts[0],
+			workshopPopularity.RankCounts[1],
+			workshopPopularity.RankCounts[2],
+			workshopPopularity.RankCounts[3],
 		)
 		for _, line := range nameLines[1:] {
 			fmt.Fprintf(output, "%-4s  %-*s  %-*s\n", "", widths.id, "", workshopNameWidth, line)
@@ -117,7 +118,7 @@ func printTextPopularityTable(output io.Writer, title string, popularity []*work
 	}
 }
 
-func printMarkdownPopularityTable(output io.Writer, title string, popularity []*workshopPopularity, limit int) {
+func printMarkdownPopularityTable(output io.Writer, title string, popularity []*popularityPkg.Entry, limit int) {
 	fmt.Fprintf(output, "### %s\n\n", title)
 	fmt.Fprintln(output, "| Rank | ID | Workshop | Score | 1st | 2nd | 3rd | 4th |")
 	fmt.Fprintln(output, "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: |")
@@ -127,18 +128,18 @@ func printMarkdownPopularityTable(output io.Writer, title string, popularity []*
 			output,
 			"| %d | %s | %s | %d | %d | %d | %d | %d |\n",
 			i+1,
-			escapeMarkdownTableCell(workshopPopularity.id),
-			escapeMarkdownTableCell(reportWorkshopName(workshopPopularity)),
-			workshopPopularity.normalizedScore(),
-			workshopPopularity.rankCounts[0],
-			workshopPopularity.rankCounts[1],
-			workshopPopularity.rankCounts[2],
-			workshopPopularity.rankCounts[3],
+			escapeMarkdownTableCell(workshopPopularity.ID),
+			escapeMarkdownTableCell(popularityPkg.ReportWorkshopName(workshopPopularity)),
+			workshopPopularity.NormalizedScore(),
+			workshopPopularity.RankCounts[0],
+			workshopPopularity.RankCounts[1],
+			workshopPopularity.RankCounts[2],
+			workshopPopularity.RankCounts[3],
 		)
 	}
 }
 
-func printHTMLPopularityReport(output io.Writer, popularity []*workshopPopularity, limit int) {
+func printHTMLPopularityReport(output io.Writer, popularity []*popularityPkg.Entry, limit int) {
 	fmt.Fprintln(output, `<!doctype html>
 <html>
 <head>
@@ -156,16 +157,16 @@ td.id { white-space: nowrap; }
 </style>
 </head>
 <body>`)
-	printHTMLPopularityTable(output, "Most Popular Art Workshops", sortPopularity(filterPopularityByKind(popularity, model.ArtWorkshop), true), limit)
-	printHTMLPopularityTable(output, "Least Popular Art Workshops", sortPopularity(filterPopularityByKind(popularity, model.ArtWorkshop), false), limit)
-	printHTMLPopularityTable(output, "Most Popular Science Workshops", sortPopularity(filterPopularityByKind(popularity, model.SciWorkshop), true), limit)
-	printHTMLPopularityTable(output, "Least Popular Science Workshops", sortPopularity(filterPopularityByKind(popularity, model.SciWorkshop), false), limit)
+	printHTMLPopularityTable(output, "Most Popular Art Workshops", popularityPkg.Sort(popularityPkg.FilterByKind(popularity, model.ArtWorkshop), true), limit)
+	printHTMLPopularityTable(output, "Least Popular Art Workshops", popularityPkg.Sort(popularityPkg.FilterByKind(popularity, model.ArtWorkshop), false), limit)
+	printHTMLPopularityTable(output, "Most Popular Science Workshops", popularityPkg.Sort(popularityPkg.FilterByKind(popularity, model.SciWorkshop), true), limit)
+	printHTMLPopularityTable(output, "Least Popular Science Workshops", popularityPkg.Sort(popularityPkg.FilterByKind(popularity, model.SciWorkshop), false), limit)
 	fmt.Fprintln(output, `<p class="note">* Score is between 0 and 100, where 100 means every eligible group listed the workshop as its top choice.</p>`)
 	fmt.Fprintln(output, `</body>
 </html>`)
 }
 
-func printHTMLPopularityTable(output io.Writer, title string, popularity []*workshopPopularity, limit int) {
+func printHTMLPopularityTable(output io.Writer, title string, popularity []*popularityPkg.Entry, limit int) {
 	fmt.Fprintf(output, "<h2>%s</h2>\n", html.EscapeString(title))
 	fmt.Fprintln(output, `<table>
 <thead>
@@ -175,10 +176,10 @@ func printHTMLPopularityTable(output io.Writer, title string, popularity []*work
 	for i, workshopPopularity := range popularity[:min(limit, len(popularity))] {
 		fmt.Fprint(output, "<tr>")
 		fmt.Fprintf(output, `<td class="number">%d</td>`, i+1)
-		fmt.Fprintf(output, `<td class="id">%s</td>`, html.EscapeString(workshopPopularity.id))
-		fmt.Fprintf(output, "<td>%s</td>", html.EscapeString(reportWorkshopName(workshopPopularity)))
-		printHTMLNumberCell(output, workshopPopularity.normalizedScore())
-		for _, count := range workshopPopularity.rankCounts {
+		fmt.Fprintf(output, `<td class="id">%s</td>`, html.EscapeString(workshopPopularity.ID))
+		fmt.Fprintf(output, "<td>%s</td>", html.EscapeString(popularityPkg.ReportWorkshopName(workshopPopularity)))
+		printHTMLNumberCell(output, workshopPopularity.NormalizedScore())
+		for _, count := range workshopPopularity.RankCounts {
 			printHTMLNumberCell(output, count)
 		}
 		fmt.Fprintln(output, "</tr>")
@@ -212,16 +213,4 @@ func wrapText(text string, width int) []string {
 	}
 
 	return lines
-}
-
-func reportWorkshopName(popularity *workshopPopularity) string {
-	if popularity.workshop == nil {
-		return workshopName(popularity)
-	}
-	return fmt.Sprintf(
-		"%s (%s-%s)",
-		workshopName(popularity),
-		model.GradeLabel(popularity.workshop.MinGrade),
-		model.GradeLabel(popularity.workshop.MaxGrade),
-	)
 }
