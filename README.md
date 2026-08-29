@@ -16,7 +16,33 @@ Then go to [localhost:8080](http://localhost:8080) in your browser. Sample group
 $ make build
 go build -o sorter ./cmd/sorter
 go build -o sorter-web ./cmd/web
+go build -o workshop-popularity ./cmd/popularity
 ```
+
+## How to run workshop popularity report
+
+```bash
+$ make build-popularity
+$ ./workshop-popularity --groups "testdata/2026/groups_2026_v1 - groups.csv" --art-workshops "testdata/2026/artworkshops_2026_v1 - artworkshops.csv" --science-workshops "testdata/2026/scienceworkshops_2026_v1 - scienceworkshops.csv"
+```
+
+For easier copy/paste into email or docs, generate HTML, open it in a browser, and copy the rendered tables:
+
+```bash
+$ ./workshop-popularity --format html --groups "testdata/2026/groups_2026_v1 - groups.csv" --art-workshops "testdata/2026/artworkshops_2026_v1 - artworkshops.csv" --science-workshops "testdata/2026/scienceworkshops_2026_v1 - scienceworkshops.csv" > popularity.html
+$ open popularity.html
+```
+
+Markdown table output is also available with `--format markdown`.
+
+The popularity report scores each class/group's preferences this way:
+
+- 1st choice: 4 points
+- 2nd choice: 3 points
+- 3rd choice: 2 points
+- 4th choice: 1 point
+
+The report sorts by normalized score, which compares each workshop's preference points against the maximum possible points from groups eligible for that workshop's grade range.
 
 ## How the algorithm works
 
